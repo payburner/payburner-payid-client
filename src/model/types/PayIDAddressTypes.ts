@@ -17,7 +17,7 @@ export class PayIDAddressTypes {
     BTC_TESTNET: PayIDAddressType = new BtcTestnet();
     ETH_MAINNET: PayIDAddressType = new EthMainnet();
 
-    ALL_TYPES: Array<PayIDAddressType> = [
+    ALL_TYPES: PayIDAddressType[] = [
         this.XRPL_MAINNET, this.XRPL_DEVNET, this.XRPL_TESTNET, this.ACH, this.BTC_MAINNET, this.BTC_TESTNET, this.ETH_MAINNET
     ];
 }

@@ -47,7 +47,7 @@ export class PayIDClient {
     resolveRawPayID( payID: string, payIDHeader?:PayIDHeader ) : Promise<any> {
         const parsedPayID = this.parsePayIDUri(payID);
 
-        return new Promise<ResolvedPayID>( function( resolve , reject ) {
+        return new Promise<ResolvedPayID>( ( resolve , reject ) => {
             if (typeof parsedPayID === 'undefined') {
                 reject({error:'unparseable payid'});
                 return;
@@ -57,9 +57,9 @@ export class PayIDClient {
                     'Accept': (typeof payIDHeader === 'undefined'?PayIDHeader.ALL:payIDHeader),
                     'PayID-Version': '1.0'
                 }} )
-            .then(function(response) {
+            .then((response) => {
                 resolve(response.data);
-            }).catch(function(error) {
+            }).catch((error) => {
                 resolve(error);
             });
         })
@@ -67,7 +67,7 @@ export class PayIDClient {
 
     parsePayIDFromData( data: any) : Promise<ResolvedPayID> {
         const self = this;
-        return new Promise<ResolvedPayID>(function(resolve, reject) {
+        return new Promise<ResolvedPayID>( (resolve, reject) => {
 
             if (typeof data.addresses === 'undefined') {
                 const errorMsg = 'Problem resolving the payId -- missing address segment';
@@ -139,9 +139,9 @@ export class PayIDClient {
 
         const self = this;
 
-        return new Promise<ResolvedPayID>( function( resolve , reject ) {
+        return new Promise<ResolvedPayID>(( resolve , reject ) => {
 
-            self.resolveRawPayID(payID).then(function(data) {
+            self.resolveRawPayID(payID).then((data) => {
 
                 if (!payID.startsWith(data.payId)) {
                     const errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
@@ -150,12 +150,12 @@ export class PayIDClient {
                         reject({error: errorMsg});
                     }
                 }
-                self.parsePayIDFromData( data ).then(function(resolvedPayId) {
+                self.parsePayIDFromData( data ).then((resolvedPayId) => {
                     resolve(resolvedPayId);
-                }).catch(function(error) {
+                }).catch((error) => {
                     reject(error);
                 })
-            }).catch(function(error) {
+            }).catch((error) => {
                 reject(error);
             });
 
