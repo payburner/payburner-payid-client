@@ -10,11 +10,6 @@ import {ResolvedAchAddressDetails} from "../model/impl/ResolvedAchAddressDetails
 import {PayIDAddressTypes} from "../model/types/PayIDAddressTypes";
 import {PayIDHeader} from "../model/types/PayIDHeader";
 
-/**
- * This is a derivative work of https://github.com/payid-org/payid/blob/master/src/services/metrics.ts
- *
- */
-
 export class PayIDClient {
 
     constructor(tolerant: boolean = true) {
