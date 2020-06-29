@@ -1,0 +1,1 @@
+{"version":3,"file":"ResolvedCryptoAddressDetails.js","sourceRoot":"","sources":["../../../../src/model/impl/ResolvedCryptoAddressDetails.ts"],"names":[],"mappings":"AAEA;IAEI,sCAAY,OAAe,EAAE,GAAW;QACpC,IAAI,CAAC,OAAO,GAAG,OAAO,CAAC;QACvB,IAAI,OAAO,GAAG,KAAK,SAAS,EAAE;YAC1B,IAAI,CAAC,GAAG,GAAG,GAAG,CAAC;SAClB;IACL,CAAC;IAKL,mCAAC;AAAD,CAAC,AAZD,IAYC"}

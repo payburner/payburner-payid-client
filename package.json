@@ -1,11 +1,17 @@
 {
   "name": "@payburner/payburner-payid-client",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "Client library for PayID",
-  "keywords": ["PayID", "XRP", "Payburner"],
-  "author": "",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "keywords": [
+    "PayID",
+    "XRP",
+    "Payburner"
+  ],
+  "author": "Payburner",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "browser": "dist/index.bundle.js",
+  "types": "dist/index.d.ts",
   "homepage": "https://github.com/payburner/payburner-payid-client#readme",
   "bugs": {
     "url": "https://github.com/payburner/payburner-payid-client/issues"
@@ -22,22 +28,32 @@
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
     "test": "jest --config jestconfig.json",
-    "build": "rm -rf lib && tsc --project .",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "build": "rollup -c && tsc",
+    "start": "tsc -w & rollup -c rollup.config.ts -w",
     "lint": "tslint -p tsconfig.json"
   },
   "dependencies": {
     "axios": "^0.19.2",
     "log4js": "^6.3.0",
-    "typescript": "^3.9.5"
+    "rollup-plugin-json": "^4.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "^4.1.0",
+    "@types/axios": "^0.14.0",
     "@types/jest": "^26.0.3",
     "jest": "^26.1.0",
-    "prettier": "^2.0.5",
+    "jest-config": "^26.1.0",
+    "lodash.camelcase": "^4.3.0",
+    "rollup": "^1.6.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-npm": "^2.0.0",
+    "rollup-plugin-terser": "^4.0.4",
+    "rollup-plugin-typescript2": "^0.27.1",
     "ts-jest": "^26.1.1",
     "tslint": "^6.1.2",
-    "tslint-config-prettier": "^1.18.0"
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.9.5"
   },
   "engines": {
     "node": ">=12.0.0",

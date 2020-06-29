@@ -1,35 +1,22 @@
 {
-  "includes": ["src/**/*.ts"],
-
-  "compileOnSave": true,
   "compilerOptions": {
-    // Basic Options
-    "project": ".",
-    "outDir": "./lib",
-    "target": "es2019",
-    "module": "commonjs",
     "moduleResolution": "node",
-    "incremental": true,
-
-    // Add support for custom typings
-    "baseUrl": "./",
-    "paths": {
-      "*": ["@types/*"]
-    },
-
-    // Source Maps & Declaration Files
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-
-    // Strict Mode
+    "target": "es5",
+    "module":"es2015",
+    "lib": ["es2015", "es2016", "es2017", "dom"],
     "strict": true,
-
-    // Checks not in "strict" mode
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "sourceMap": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declarationDir": "dist/types",
+    "outDir": "dist/lib",
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "include": [
+    "src"
+  ]
 }
