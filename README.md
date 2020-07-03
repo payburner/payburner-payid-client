@@ -14,7 +14,7 @@ Example -- Web:
 
 ```
     <script src="https://unpkg.com/axios@0.19.2/dist/axios.js"></script>
-    <script src="../dist/index.bundle.js"></script>
+    <script src="https://unpkg.com/@payburner/payburner-payid-client@1.0.6/dist/index.bundle.js"></script>
     <script>
         const payIDClient = new Payburner.PayIDClient(true);
         payIDClient.resolvePayID('LaSourceAfrique$payburner.com').then(function (resolvedPayID) {
