@@ -38,6 +38,7 @@ import { PayIDClient } from '../index';
 import { XrplMainnet } from "../model/types/XrplMainnet";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
 import { PayIDNetworks } from "../model/types/PayIDNetworks";
+import { PayIDUtils } from "../index";
 test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0, void 0, function () {
     var payIDClient, resolvedPayID, address, addressDetails;
     return __generator(this, function (_a) {
@@ -58,6 +59,54 @@ test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0,
                     expect(address.paymentNetwork).toBe(PayIDNetworks.XRPL);
                     expect(address.environment).toBe(new XrplMainnet().environment);
                 }
+                return [2 /*return*/];
+        }
+    });
+}); });
+test('Test Signing', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var payIDUtils, key, pem, key2, payId, xrpAddress, addressDetails, address, unsigned, signed, verif, thumbprint;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                payIDUtils = new PayIDUtils();
+                return [4 /*yield*/, payIDUtils.newKey()];
+            case 1:
+                key = _a.sent();
+                console.log(key.toJSON(false));
+                expect(key.kty).toBe('RSA');
+                expect(key.length).toBe(2048);
+                console.log(key.toPEM(false));
+                pem = key.toPEM(false);
+                return [4 /*yield*/, payIDUtils.fromPEM(pem)];
+            case 2:
+                key2 = _a.sent();
+                console.log(key2.toJSON(false));
+                payId = 'alice$payid.example';
+                xrpAddress = 'rP3t3JStqWPYd8H88WfBYh3v84qqYzbHQ6';
+                addressDetails = {
+                    address: xrpAddress,
+                };
+                address = {
+                    environment: 'TESTNET',
+                    paymentNetwork: 'XRPL',
+                    addressDetailsType: AddressDetailsType.CryptoAddress,
+                    addressDetails: addressDetails,
+                };
+                unsigned = {
+                    payId: payId,
+                    payIdAddress: address,
+                };
+                return [4 /*yield*/, payIDUtils.sign(key, unsigned)];
+            case 3:
+                signed = _a.sent();
+                console.log('SIGNED:' + JSON.stringify(signed, null, 2));
+                return [4 /*yield*/, payIDUtils.verify(signed)];
+            case 4:
+                verif = _a.sent();
+                return [4 /*yield*/, key.thumbprint('SHA-256')];
+            case 5:
+                thumbprint = _a.sent();
+                console.log('THUMBPRINT:' + thumbprint.toString('hex'));
                 return [2 /*return*/];
         }
     });

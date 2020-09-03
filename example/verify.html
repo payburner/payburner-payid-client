@@ -1,0 +1,14 @@
+<html>
+
+
+    <footer>
+        <script src="https://unpkg.com/axios@0.19.2/dist/axios.js"></script>
+        <script src="../dist/index.bundle.js"></script>
+        <script>
+            const payIDClient = new Payburner.PayIDUtils();
+            payIDClient.newKey().then(function(key) {
+                alert(JSON.stringify(key.keystore, null, 2));
+            })
+        </script>
+    </footer>
+</html>
