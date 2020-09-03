@@ -335,7 +335,7 @@ declare module 'node-jose' {
         }
 
         interface Verifier {
-            verify(input: string, opts?: { allowEmbeddedKey?: boolean, handlers: {
+            verify(input: any, opts?: { allowEmbeddedKey?: boolean, handlers: {
                 b64?:boolean,
                     name?:boolean
                 } }): Promise<VerificationResult>;

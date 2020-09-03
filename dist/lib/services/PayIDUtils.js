@@ -1,4 +1,6 @@
 import * as jose from 'node-jose';
+import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl";
+import { ResolvedPayID } from "../model/impl/ResolvedPayID";
 var PayIDUtils = /** @class */ (function () {
     function PayIDUtils() {
     }
@@ -11,14 +13,28 @@ var PayIDUtils = /** @class */ (function () {
     PayIDUtils.prototype.fromPEM = function (pem) {
         return jose.JWK.createKeyStore().add(pem, 'pem');
     };
-    PayIDUtils.prototype.verify = function (input) {
-        return jose.JWS.createVerify().
-            verify(input, { allowEmbeddedKey: true,
+    PayIDUtils.prototype.signPayID = function (key, input) {
+        var self = this;
+        var promises = new Array();
+        input.addresses.forEach(function (address) {
+            var unsigned = new UnsignedPayIDAddressImpl(input.payId, address);
+            promises.push(self.signPayIDAddress(key, unsigned));
+        });
+        return new Promise(function (resolve, reject) {
+            Promise.all(promises).then(function (values) {
+                resolve(new ResolvedPayID(input.addresses, input.payId, input.memo, input.proofOfControlSignature, values));
+            });
+        });
+    };
+    PayIDUtils.prototype.verifySignedPayIDAddress = function (input) {
+        return jose.JWS.createVerify().verify(input, {
+            allowEmbeddedKey: true,
             handlers: {
                 name: true
-            } });
+            }
+        });
     };
-    PayIDUtils.prototype.sign = function (key, input) {
+    PayIDUtils.prototype.signPayIDAddress = function (key, input) {
         var opts = {
             compact: false,
             fields: {
@@ -31,12 +47,17 @@ var PayIDUtils = /** @class */ (function () {
                 name: true
             }
         };
-        return jose.JWS.createSign(opts, {
-            key: key,
-            reference: "jwk"
-        }).
-            update(JSON.stringify(input), "utf-8").
-            final();
+        return new Promise(function (resolve, reject) {
+            jose.JWS.createSign(opts, {
+                key: key,
+                reference: "jwk"
+            }).update(JSON.stringify(input), "utf-8").final().then(function (signed) {
+                var unknownData = signed;
+                resolve(unknownData);
+            }).catch(function (error) {
+                reject(error);
+            });
+        });
     };
     return PayIDUtils;
 }());

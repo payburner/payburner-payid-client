@@ -110,7 +110,7 @@ var PayIDClient = /** @class */ (function () {
                 var environment = address.environment;
                 addresses.push(new ResolvedAddress(addressDetailsVal, addressDetailsTypeVal, paymentNetwork, environment));
             });
-            resolve(new ResolvedPayID(addresses, data.payId));
+            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, undefined));
         });
     };
     PayIDClient.prototype.resolvePayID = function (payID) {

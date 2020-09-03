@@ -125,7 +125,7 @@ var Payburner = (function (exports, axios) {
     }());
 
     var ResolvedPayID = /** @class */ (function () {
-        function ResolvedPayID(addresses, payId, memo, proofOfSignature) {
+        function ResolvedPayID(addresses, payId, memo, proofOfSignature, verifiedAddresses) {
             this.addresses = addresses;
             if (typeof payId !== 'undefined') {
                 this.payId = payId;
@@ -135,6 +135,9 @@ var Payburner = (function (exports, axios) {
             }
             if (typeof proofOfSignature !== 'undefined') {
                 this.proofOfControlSignature = proofOfSignature;
+            }
+            if (typeof verifiedAddresses !== 'undefined') {
+                this.verifiedAddresses = verifiedAddresses;
             }
         }
         return ResolvedPayID;
@@ -273,7 +276,7 @@ var Payburner = (function (exports, axios) {
                     var environment = address.environment;
                     addresses.push(new ResolvedAddress(addressDetailsVal, addressDetailsTypeVal, paymentNetwork, environment));
                 });
-                resolve(new ResolvedPayID(addresses, data.payId));
+                resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, undefined));
             });
         };
         PayIDClient.prototype.resolvePayID = function (payID) {
@@ -63705,6 +63708,14 @@ var Payburner = (function (exports, axios) {
     var lib_3 = lib.JWK;
     var lib_4 = lib.JWS;
 
+    var UnsignedPayIDAddressImpl = /** @class */ (function () {
+        function UnsignedPayIDAddressImpl(payId, address) {
+            this.payIdAddress = address;
+            this.payId = payId;
+        }
+        return UnsignedPayIDAddressImpl;
+    }());
+
     var PayIDUtils = /** @class */ (function () {
         function PayIDUtils() {
         }
@@ -63717,14 +63728,28 @@ var Payburner = (function (exports, axios) {
         PayIDUtils.prototype.fromPEM = function (pem) {
             return lib_3.createKeyStore().add(pem, 'pem');
         };
-        PayIDUtils.prototype.verify = function (input) {
-            return lib_4.createVerify().
-                verify(input, { allowEmbeddedKey: true,
+        PayIDUtils.prototype.signPayID = function (key, input) {
+            var self = this;
+            var promises = new Array();
+            input.addresses.forEach(function (address) {
+                var unsigned = new UnsignedPayIDAddressImpl(input.payId, address);
+                promises.push(self.signPayIDAddress(key, unsigned));
+            });
+            return new Promise(function (resolve, reject) {
+                Promise.all(promises).then(function (values) {
+                    resolve(new ResolvedPayID(input.addresses, input.payId, input.memo, input.proofOfControlSignature, values));
+                });
+            });
+        };
+        PayIDUtils.prototype.verifySignedPayIDAddress = function (input) {
+            return lib_4.createVerify().verify(input, {
+                allowEmbeddedKey: true,
                 handlers: {
                     name: true
-                } });
+                }
+            });
         };
-        PayIDUtils.prototype.sign = function (key, input) {
+        PayIDUtils.prototype.signPayIDAddress = function (key, input) {
             var opts = {
                 compact: false,
                 fields: {
@@ -63737,12 +63762,17 @@ var Payburner = (function (exports, axios) {
                     name: true
                 }
             };
-            return lib_4.createSign(opts, {
-                key: key,
-                reference: "jwk"
-            }).
-                update(JSON.stringify(input), "utf-8").
-                final();
+            return new Promise(function (resolve, reject) {
+                lib_4.createSign(opts, {
+                    key: key,
+                    reference: "jwk"
+                }).update(JSON.stringify(input), "utf-8").final().then(function (signed) {
+                    var unknownData = signed;
+                    resolve(unknownData);
+                }).catch(function (error) {
+                    reject(error);
+                });
+            });
         };
         return PayIDUtils;
     }());

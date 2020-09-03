@@ -39,6 +39,7 @@ import { XrplMainnet } from "../model/types/XrplMainnet";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
 import { PayIDNetworks } from "../model/types/PayIDNetworks";
 import { PayIDUtils } from "../index";
+import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl";
 test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0, void 0, function () {
     var payIDClient, resolvedPayID, address, addressDetails;
     return __generator(this, function (_a) {
@@ -63,12 +64,13 @@ test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0,
         }
     });
 }); });
-test('Test Signing', function () { return __awaiter(void 0, void 0, void 0, function () {
-    var payIDUtils, key, pem, key2, payId, xrpAddress, addressDetails, address, unsigned, signed, verif, thumbprint;
+test('Test Signing and Verification', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var payIDUtils, payIDClient, key, pem, key2, rawPayId, resolvedPayID, address, unsigned, signed, originalThumbprint, verif, verifiedThumbprint, signedPayId;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 payIDUtils = new PayIDUtils();
+                payIDClient = new PayIDClient(true);
                 return [4 /*yield*/, payIDUtils.newKey()];
             case 1:
                 key = _a.sent();
@@ -81,32 +83,40 @@ test('Test Signing', function () { return __awaiter(void 0, void 0, void 0, func
             case 2:
                 key2 = _a.sent();
                 console.log(key2.toJSON(false));
-                payId = 'alice$payid.example';
-                xrpAddress = 'rP3t3JStqWPYd8H88WfBYh3v84qqYzbHQ6';
-                addressDetails = {
-                    address: xrpAddress,
+                rawPayId = {
+                    "payId": "LaSourceAfrique$payburner.com",
+                    "addresses": [
+                        {
+                            "paymentNetwork": "XRPL",
+                            "environment": "MAINNET",
+                            "addressDetailsType": "CryptoAddressDetails",
+                            "addressDetails": {
+                                "address": "rKZKRYe6YhskeeDN8YSdPdv6zkMV6LfkR4"
+                            }
+                        }
+                    ]
                 };
-                address = {
-                    environment: 'TESTNET',
-                    paymentNetwork: 'XRPL',
-                    addressDetailsType: AddressDetailsType.CryptoAddress,
-                    addressDetails: addressDetails,
-                };
-                unsigned = {
-                    payId: payId,
-                    payIdAddress: address,
-                };
-                return [4 /*yield*/, payIDUtils.sign(key, unsigned)];
+                return [4 /*yield*/, payIDClient.parsePayIDFromData(rawPayId)];
             case 3:
+                resolvedPayID = _a.sent();
+                address = payIDClient.seekAddressOfType(resolvedPayID, new XrplMainnet());
+                unsigned = new UnsignedPayIDAddressImpl(resolvedPayID.payId, address);
+                return [4 /*yield*/, payIDUtils.signPayIDAddress(key, unsigned)];
+            case 4:
                 signed = _a.sent();
                 console.log('SIGNED:' + JSON.stringify(signed, null, 2));
-                return [4 /*yield*/, payIDUtils.verify(signed)];
-            case 4:
-                verif = _a.sent();
                 return [4 /*yield*/, key.thumbprint('SHA-256')];
             case 5:
-                thumbprint = _a.sent();
-                console.log('THUMBPRINT:' + thumbprint.toString('hex'));
+                originalThumbprint = _a.sent();
+                return [4 /*yield*/, payIDUtils.verifySignedPayIDAddress(signed)];
+            case 6:
+                verif = _a.sent();
+                return [4 /*yield*/, verif.key.thumbprint('SHA-256')];
+            case 7:
+                verifiedThumbprint = _a.sent();
+                expect(verifiedThumbprint.toString('hex')).toBe(originalThumbprint.toString('hex'));
+                signedPayId = payIDUtils.signPayID(key, resolvedPayID);
+                console.log('SIGNED PAYID:' + JSON.stringify(signedPayId, null, 2));
                 return [2 /*return*/];
         }
     });

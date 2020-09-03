@@ -130,7 +130,7 @@ export class PayIDClient {
 
             });
 
-            resolve(new ResolvedPayID(addresses, data.payId));
+            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, undefined));
         });
     }
 
