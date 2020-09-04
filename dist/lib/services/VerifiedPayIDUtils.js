@@ -39,19 +39,20 @@ import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl
 import { ResolvedPayID } from "../model/impl/ResolvedPayID";
 import { VerificationResult } from "../model/impl/VerificationResult";
 import { VerificationErrorCode } from "../model/interfaces/VerificationErrorCode";
-var PayIDUtils = /** @class */ (function () {
-    function PayIDUtils() {
+import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
+var VerifiedPayIDUtils = /** @class */ (function () {
+    function VerifiedPayIDUtils() {
     }
-    PayIDUtils.prototype.newKeyStore = function () {
+    VerifiedPayIDUtils.prototype.newKeyStore = function () {
         return jose.JWK.createKeyStore();
     };
-    PayIDUtils.prototype.newKey = function () {
+    VerifiedPayIDUtils.prototype.newKey = function () {
         return this.newKeyStore().generate("RSA", 2048, { alg: "RS512", key_ops: ["sign", "decrypt", "unwrap"] });
     };
-    PayIDUtils.prototype.fromPEM = function (pem) {
+    VerifiedPayIDUtils.prototype.fromPEM = function (pem) {
         return jose.JWK.createKeyStore().add(pem, 'pem');
     };
-    PayIDUtils.prototype.signPayID = function (key, input) {
+    VerifiedPayIDUtils.prototype.signPayID = function (key, input) {
         var self = this;
         var promises = new Array();
         input.addresses.forEach(function (address) {
@@ -64,7 +65,30 @@ var PayIDUtils = /** @class */ (function () {
             });
         });
     };
-    PayIDUtils.prototype.verifyPayID = function (thumbprint, input) {
+    VerifiedPayIDUtils.prototype.matchAddress = function (address, payloadAddress) {
+        var parsedPayloadAddress = JSON.parse(atob(payloadAddress));
+        if (address.environment !== parsedPayloadAddress.payIdAddress.environment) {
+            return false;
+        }
+        if (address.paymentNetwork !== parsedPayloadAddress.payIdAddress.paymentNetwork) {
+            return false;
+        }
+        if (address.addressDetailsType !== parsedPayloadAddress.payIdAddress.addressDetailsType) {
+            return false;
+        }
+        if (address.addressDetailsType === AddressDetailsType.CryptoAddress) {
+            var cryptoAddressDetails = address.addressDetails;
+            var payloadAddressDetails = parsedPayloadAddress.payIdAddress.addressDetails;
+            if (cryptoAddressDetails.address !== payloadAddressDetails.address) {
+                return false;
+            }
+            if (cryptoAddressDetails.tag !== payloadAddressDetails.tag) {
+                return false;
+            }
+        }
+        return true;
+    };
+    VerifiedPayIDUtils.prototype.verifyPayID = function (thumbprint, input) {
         var self = this;
         return new Promise(function (resolve, reject) {
             if (typeof input.verifiedAddresses === 'undefined' || input.verifiedAddresses === null || input.verifiedAddresses.length === 0) {
@@ -73,7 +97,23 @@ var PayIDUtils = /** @class */ (function () {
             else if (typeof thumbprint === 'undefined' || thumbprint === null) {
                 resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_BUT_NO_THUMBPRINT, 'The payID has verified addresses, but no thumbprint was provided'));
             }
+            else if (input.addresses.length !== input.verifiedAddresses.length) {
+                resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_IN_LENGTH, 'The payID has verified addresses, but they differ in length from the addresses provided.'));
+            }
             else {
+                var verifiedAllMatch = true;
+                for (var idx = 0; idx < input.addresses.length; idx++) {
+                    if (!self.matchAddress(input.addresses[idx], input.verifiedAddresses[idx].payload)) {
+                        console.log('ADDRESS:' + JSON.stringify(input.addresses[idx]));
+                        console.log('PAYLOAD:' + atob(input.verifiedAddresses[idx].payload));
+                        verifiedAllMatch = false;
+                        break;
+                    }
+                }
+                if (!verifiedAllMatch) {
+                    resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_CONTENT, 'The addresses in the verified address array differ from the the ones in the address array'));
+                    return;
+                }
                 var promises_1 = new Array();
                 input.verifiedAddresses.forEach(function (verifiedAddress) {
                     promises_1.push(self.verifySignedPayIDAddress(verifiedAddress));
@@ -90,20 +130,27 @@ var PayIDUtils = /** @class */ (function () {
                                 case 1:
                                     verifiedThumbprint = _a.sent();
                                     if (thumbprint !== verifiedThumbprint.toString('hex')) {
+                                        console.log('Verified:' + verifiedThumbprint.toString('hex'));
+                                        console.log('Thumbprint:' + thumbprint);
                                         verifiedAllThumbprints = false;
                                     }
                                     return [2 /*return*/];
                             }
                         });
                     }); });
-                    resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
+                    if (!verifiedAllThumbprints) {
+                        resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
+                    }
+                    else {
+                        resolve(new VerificationResult(true));
+                    }
                 }).catch(function (error) {
                     resolve(new VerificationResult(false, VerificationErrorCode.SYSTEM_ERROR_VERIFYING, 'We encountered a system error verifying the addresses -- ' + (typeof error === 'string' ? error : JSON.stringify(error))));
                 });
             }
         });
     };
-    PayIDUtils.prototype.verifySignedPayIDAddress = function (input) {
+    VerifiedPayIDUtils.prototype.verifySignedPayIDAddress = function (input) {
         return jose.JWS.createVerify().verify(input, {
             allowEmbeddedKey: true,
             handlers: {
@@ -111,7 +158,7 @@ var PayIDUtils = /** @class */ (function () {
             }
         });
     };
-    PayIDUtils.prototype.signPayIDAddress = function (key, input) {
+    VerifiedPayIDUtils.prototype.signPayIDAddress = function (key, input) {
         var opts = {
             compact: false,
             fields: {
@@ -136,7 +183,7 @@ var PayIDUtils = /** @class */ (function () {
             });
         });
     };
-    return PayIDUtils;
+    return VerifiedPayIDUtils;
 }());
-export { PayIDUtils };
-//# sourceMappingURL=PayIDUtils.js.map
+export { VerifiedPayIDUtils };
+//# sourceMappingURL=VerifiedPayIDUtils.js.map

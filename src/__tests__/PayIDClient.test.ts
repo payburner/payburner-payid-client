@@ -3,8 +3,7 @@ import {XrplMainnet} from "../model/types/XrplMainnet";
 import {AddressDetailsType} from "../model/interfaces/AddressDetailsType";
 import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
 import {PayIDNetworks} from "../model/types/PayIDNetworks";
-import {PayIDUtils} from "../index";
-import * as jose from 'node-jose';
+import {VerifiedPayIDUtils} from "../index";
 import {UnsignedPayIDAddressImpl} from "../model/impl/UnsignedPayIDAddressImpl";
 import {Address} from "../model/interfaces/Address";
 test('Test resolve XRPL MAINNET', async () => {
@@ -24,7 +23,7 @@ test('Test resolve XRPL MAINNET', async () => {
 });
 
 test('Test Signing and Verification', async () => {
-    const payIDUtils = new PayIDUtils();
+    const payIDUtils = new VerifiedPayIDUtils();
     const payIDClient = new PayIDClient(true);
     const key = await payIDUtils.newKey();
     console.log(key.toJSON(false));
@@ -37,14 +36,14 @@ test('Test Signing and Verification', async () => {
     console.log(key2.toJSON(false));
 
     const rawPayId = {
-        "payId": "LaSourceAfrique$payburner.com",
+        "payId": "payburn_test$payid.mayurbhandary.com",
         "addresses": [
             {
                 "paymentNetwork": "XRPL",
                 "environment": "MAINNET",
                 "addressDetailsType": "CryptoAddressDetails",
                 "addressDetails": {
-                    "address": "rKZKRYe6YhskeeDN8YSdPdv6zkMV6LfkR4"
+                    "address": "rU3mTFnefto99VcEECBAbQseRMEKTCLGxr"
                 }
             }
         ]
@@ -66,7 +65,10 @@ test('Test Signing and Verification', async () => {
     const signedPayId = await payIDUtils.signPayID(key, resolvedPayID);
 
     console.log('SIGNED PAYID:' + JSON.stringify(signedPayId, null, 2));
+    console.log('THUMBPRINT:' + verifiedThumbprint.toString('hex'));
 
+    const verificationResult = await  payIDUtils.verifyPayID(verifiedThumbprint.toString('hex'), signedPayId);
+    console.log('VERIFICATION RESULT:' + JSON.stringify(verificationResult, null, 2));
 });
 
 test('Test parse raw XRPL MAINNET', async () => {

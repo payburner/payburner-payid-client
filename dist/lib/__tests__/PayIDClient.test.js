@@ -38,7 +38,7 @@ import { PayIDClient } from '../index';
 import { XrplMainnet } from "../model/types/XrplMainnet";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
 import { PayIDNetworks } from "../model/types/PayIDNetworks";
-import { PayIDUtils } from "../index";
+import { VerifiedPayIDUtils } from "../index";
 import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl";
 test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0, void 0, function () {
     var payIDClient, resolvedPayID, address, addressDetails;
@@ -65,11 +65,11 @@ test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0,
     });
 }); });
 test('Test Signing and Verification', function () { return __awaiter(void 0, void 0, void 0, function () {
-    var payIDUtils, payIDClient, key, pem, key2, rawPayId, resolvedPayID, address, unsigned, signed, originalThumbprint, verif, verifiedThumbprint, signedPayId;
+    var payIDUtils, payIDClient, key, pem, key2, rawPayId, resolvedPayID, address, unsigned, signed, originalThumbprint, verif, verifiedThumbprint, signedPayId, verificationResult;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                payIDUtils = new PayIDUtils();
+                payIDUtils = new VerifiedPayIDUtils();
                 payIDClient = new PayIDClient(true);
                 return [4 /*yield*/, payIDUtils.newKey()];
             case 1:
@@ -84,14 +84,14 @@ test('Test Signing and Verification', function () { return __awaiter(void 0, voi
                 key2 = _a.sent();
                 console.log(key2.toJSON(false));
                 rawPayId = {
-                    "payId": "LaSourceAfrique$payburner.com",
+                    "payId": "payburn_test$payid.mayurbhandary.com",
                     "addresses": [
                         {
                             "paymentNetwork": "XRPL",
                             "environment": "MAINNET",
                             "addressDetailsType": "CryptoAddressDetails",
                             "addressDetails": {
-                                "address": "rKZKRYe6YhskeeDN8YSdPdv6zkMV6LfkR4"
+                                "address": "rU3mTFnefto99VcEECBAbQseRMEKTCLGxr"
                             }
                         }
                     ]
@@ -115,8 +115,15 @@ test('Test Signing and Verification', function () { return __awaiter(void 0, voi
             case 7:
                 verifiedThumbprint = _a.sent();
                 expect(verifiedThumbprint.toString('hex')).toBe(originalThumbprint.toString('hex'));
-                signedPayId = payIDUtils.signPayID(key, resolvedPayID);
+                return [4 /*yield*/, payIDUtils.signPayID(key, resolvedPayID)];
+            case 8:
+                signedPayId = _a.sent();
                 console.log('SIGNED PAYID:' + JSON.stringify(signedPayId, null, 2));
+                console.log('THUMBPRINT:' + verifiedThumbprint.toString('hex'));
+                return [4 /*yield*/, payIDUtils.verifyPayID(verifiedThumbprint.toString('hex'), signedPayId)];
+            case 9:
+                verificationResult = _a.sent();
+                console.log('VERIFICATION RESULT:' + JSON.stringify(verificationResult, null, 2));
                 return [2 /*return*/];
         }
     });
