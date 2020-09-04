@@ -9,13 +9,15 @@ import {ResolvedCryptoAddressDetails} from "../model/impl/ResolvedCryptoAddressD
 import {ResolvedAchAddressDetails} from "../model/impl/ResolvedAchAddressDetails";
 import {PayIDAddressTypes} from "../model/types/PayIDAddressTypes";
 import {PayIDHeader} from "../model/types/PayIDHeader";
+import {VerifiedPayIDUtils} from "./VerifiedPayIDUtils";
 
 export class PayIDClient {
 
     constructor(tolerant: boolean = true) {
         this.tolerant = tolerant;
+        this.verifiedPayIDUtils = new VerifiedPayIDUtils();
     }
-
+    verifiedPayIDUtils: VerifiedPayIDUtils;
     tolerant: boolean;
 
     isASCII( input: string )  {
@@ -150,8 +152,15 @@ export class PayIDClient {
                         reject({error: errorMsg});
                     }
                 }
-                self.parsePayIDFromData( data ).then((resolvedPayId) => {
-                    resolve(resolvedPayId);
+                self.parsePayIDFromData( data ).then(async (resolvedPayId) => {
+
+                    const verificationResult = await self.verifiedPayIDUtils.verifyPayID(undefined, resolvedPayId);
+                    if (!verificationResult.verified) {
+                        reject(verificationResult.errorMessage);
+                    }
+                    else {
+                        resolve(resolvedPayId);
+                    }
                 }).catch((error) => {
                     reject(error);
                 })
