@@ -9,8 +9,10 @@ import {ResolvedCryptoAddressDetails} from "../model/impl/ResolvedCryptoAddressD
 import {ResolvedAchAddressDetails} from "../model/impl/ResolvedAchAddressDetails";
 import {PayIDAddressTypes} from "../model/types/PayIDAddressTypes";
 import {PayIDHeader} from "../model/types/PayIDHeader";
-import {VerifiedPayIDUtils} from "./VerifiedPayIDUtils";
+
 import {PayIDThumbprintLookupService} from "./PayIDThumbprintLookupService";
+
+import {VerifiedPayIDUtils} from "./VerifiedPayIDUtils";
 import {SignedPayIDAddress} from "../model/interfaces/SignedPayIDAddress";
 
 export class PayIDClient {
@@ -199,7 +201,7 @@ export class PayIDClient {
         const self = this;
         return new Promise<ResolvedPayID>((resolve, reject) => {
             self.resolveRawPayID(payID).then((data) => {
-                self.validateResolvedPayID(payID, data, verify).then(function(resolvedPayID) {
+                self.validateResolvedPayID(payID, data, verify).then((resolvedPayID) => {
                     resolve(resolvedPayID);
                 }).catch((error)=>{
                     reject(error);

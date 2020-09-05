@@ -4,8 +4,8 @@ import { Address } from "../model/interfaces/Address";
 import { PayIDAddressType } from "../model/types/PayIDAddressType";
 import { PayIDAddressTypes } from "../model/types/PayIDAddressTypes";
 import { PayIDHeader } from "../model/types/PayIDHeader";
-import { VerifiedPayIDUtils } from "./VerifiedPayIDUtils";
 import { PayIDThumbprintLookupService } from "./PayIDThumbprintLookupService";
+import { VerifiedPayIDUtils } from "./VerifiedPayIDUtils";
 export declare class PayIDClient {
     constructor(tolerant?: boolean, payIDThumbprintServiceLookup?: PayIDThumbprintLookupService);
     payIDThumbprintServiceLookup?: PayIDThumbprintLookupService;

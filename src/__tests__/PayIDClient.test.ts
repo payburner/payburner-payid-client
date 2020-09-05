@@ -3,13 +3,13 @@ import {XrplMainnet} from "../model/types/XrplMainnet";
 import {AddressDetailsType} from "../model/interfaces/AddressDetailsType";
 import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
 import {PayIDNetworks} from "../model/types/PayIDNetworks";
-import {VerifiedPayIDUtils} from "../index";
+import {VerifiedPayIDUtils} from "../services/VerifiedPayIDUtils";
 import {UnsignedPayIDAddressImpl} from "../model/impl/UnsignedPayIDAddressImpl";
 import {Address} from "../model/interfaces/Address";
 
 class TestLookupService implements PayIDThumbprintLookupService {
 
-    payIDThumbprintMap = new Map<String, String>();
+    payIDThumbprintMap = new Map<string, string>();
 
     setPayIDThumbprint(payID:string, thumbprint:string) {
         this.payIDThumbprintMap.set(payID, thumbprint);
@@ -19,7 +19,7 @@ class TestLookupService implements PayIDThumbprintLookupService {
         return new Promise<PayIDPublicKeyThumbprint>((resolve, reject)=>{
             const thumbprint = this.payIDThumbprintMap.get(payID);
             if (typeof thumbprint !== 'undefined') {
-                resolve( new PayIDPublicKeyThumbprint(payID, thumbprint.toString()));
+                resolve( new PayIDPublicKeyThumbprint(payID, thumbprint));
             }
             else {
                 reject({error: 'not found'});

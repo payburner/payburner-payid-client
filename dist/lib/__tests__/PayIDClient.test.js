@@ -38,7 +38,7 @@ import { PayIDClient, PayIDPublicKeyThumbprint } from '../index';
 import { XrplMainnet } from "../model/types/XrplMainnet";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
 import { PayIDNetworks } from "../model/types/PayIDNetworks";
-import { VerifiedPayIDUtils } from "../index";
+import { VerifiedPayIDUtils } from "../services/VerifiedPayIDUtils";
 import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl";
 var TestLookupService = /** @class */ (function () {
     function TestLookupService() {
@@ -52,7 +52,7 @@ var TestLookupService = /** @class */ (function () {
         return new Promise(function (resolve, reject) {
             var thumbprint = _this.payIDThumbprintMap.get(payID);
             if (typeof thumbprint !== 'undefined') {
-                resolve(new PayIDPublicKeyThumbprint(payID, thumbprint.toString()));
+                resolve(new PayIDPublicKeyThumbprint(payID, thumbprint));
             }
             else {
                 reject({ error: 'not found' });

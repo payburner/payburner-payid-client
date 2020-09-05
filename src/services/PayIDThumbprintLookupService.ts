@@ -1,4 +1,3 @@
-
 import {PayIDPublicKeyThumbprint} from "../model/impl/PayIDPublicKeyThumbprint";
 
 export interface PayIDThumbprintLookupService {
