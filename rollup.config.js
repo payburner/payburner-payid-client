@@ -10,7 +10,7 @@ require('fs').unlink('dist/index.d.ts', (err) => {});
 
 export default {
     input: 'src/index.ts',
-    external: [ 'axios', 'nose-jose' ],
+    external: [ ],
     output: [
         {
             file: pkg.main,
