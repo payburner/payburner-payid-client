@@ -1,6 +1,7 @@
 import typescript from 'rollup-plugin-typescript2';
 import pkg from './package.json';
-
+import builtins from 'rollup-plugin-node-builtins';
+import globals from 'rollup-plugin-node-globals';
 import resolve from 'rollup-plugin-node-resolve';
 import commonJS from 'rollup-plugin-commonjs'
 import json from '@rollup/plugin-json'
@@ -9,7 +10,7 @@ require('fs').unlink('dist/index.d.ts', (err) => {});
 
 export default {
     input: 'src/index.ts',
-    external: [ 'axios' ],
+    external: [ 'axios', 'nose-jose' ],
     output: [
         {
             file: pkg.main,
@@ -33,6 +34,8 @@ export default {
 
         resolve(),
         commonJS( ),
-        json()
+        json(),
+        globals(),
+        builtins()
     ]
 };
