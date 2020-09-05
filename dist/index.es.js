@@ -112,6 +112,14 @@ var PayIDAddressTypes = /** @class */ (function () {
     return PayIDAddressTypes;
 }());
 
+var PayIDPublicKeyThumbprint = /** @class */ (function () {
+    function PayIDPublicKeyThumbprint(payID, thumbprint) {
+        this.payID = payID;
+        this.thumbprint = thumbprint;
+    }
+    return PayIDPublicKeyThumbprint;
+}());
+
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -63650,7 +63658,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return lib_3.createKeyStore();
     };
     VerifiedPayIDUtils.prototype.newKey = function () {
-        return this.newKeyStore().generate("RSA", 2048, { alg: "RS512", key_ops: ["sign", "decrypt", "unwrap"] });
+        return this.newKeyStore().generate("EC", "P-256", { alg: "ES256", key_ops: ["sign"] });
     };
     VerifiedPayIDUtils.prototype.fromPEM = function (pem) {
         return lib_3.createKeyStore().add(pem, 'pem');
@@ -63692,6 +63700,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return true;
     };
     VerifiedPayIDUtils.prototype.verifyPayID = function (thumbprint, input) {
+        var _this = this;
         var self = this;
         return new Promise(function (resolve, reject) {
             if (typeof input.verifiedAddresses === 'undefined' || input.verifiedAddresses === null || input.verifiedAddresses.length === 0) {
@@ -63723,7 +63732,6 @@ var VerifiedPayIDUtils = /** @class */ (function () {
                 });
                 Promise.all(promises_1).then(function (values) {
                     // now we need to verify the thumbprint
-                    var _this = this;
                     var verifiedAllThumbprints = true;
                     values.forEach(function (verificationResult) { return __awaiter(_this, void 0, void 0, function () {
                         var verifiedThumbprint;
@@ -63766,7 +63774,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
             compact: false,
             fields: {
                 name: 'identityKey',
-                alg: 'RS512',
+                alg: 'ES256',
                 typ: 'JOSE+JSON',
                 crit: ['name']
             },
@@ -63777,7 +63785,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return new Promise(function (resolve, reject) {
             lib_4.createSign(opts, {
                 key: key,
-                reference: "jwk"
+                reference: 'jwk'
             }).update(JSON.stringify(input), "utf-8").final().then(function (signed) {
                 var unknownData = signed;
                 resolve(unknownData);
@@ -63790,10 +63798,13 @@ var VerifiedPayIDUtils = /** @class */ (function () {
 }());
 
 var PayIDClient = /** @class */ (function () {
-    function PayIDClient(tolerant) {
+    function PayIDClient(tolerant, payIDThumbprintServiceLookup) {
         if (tolerant === void 0) { tolerant = true; }
         this.tolerant = tolerant;
         this.verifiedPayIDUtils = new VerifiedPayIDUtils();
+        if (typeof payIDThumbprintServiceLookup !== 'undefined') {
+            this.payIDThumbprintServiceLookup = payIDThumbprintServiceLookup;
+        }
     }
     PayIDClient.prototype.isASCII = function (input) {
         // eslint-disable-next-line no-control-regex -- The ASCII regex uses control characters
@@ -63823,10 +63834,12 @@ var PayIDClient = /** @class */ (function () {
                 reject({ error: 'unparseable payid' });
                 return;
             }
-            axios.get('https://' + parsedPayID.host + '/' + parsedPayID.path, { headers: {
+            axios.get('https://' + parsedPayID.host + '/' + parsedPayID.path, {
+                headers: {
                     'Accept': (typeof payIDHeader === 'undefined' ? PayIDHeader.ALL : payIDHeader),
                     'PayID-Version': '1.0'
-                } })
+                }
+            })
                 .then(function (response) {
                 resolve(response.data);
             }).catch(function (error) {
@@ -63842,6 +63855,7 @@ var PayIDClient = /** @class */ (function () {
                 reject({ error: errorMsg });
             }
             var addresses = new Array();
+            var verifiedAddresses = new Array();
             data.addresses.forEach(function (address) {
                 var addressDetailsType = address.addressDetailsType;
                 var addressDetails = address.addressDetails;
@@ -63893,38 +63907,80 @@ var PayIDClient = /** @class */ (function () {
                 var environment = address.environment;
                 addresses.push(new ResolvedAddress(addressDetailsVal, addressDetailsTypeVal, paymentNetwork, environment));
             });
-            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, undefined));
+            if (typeof data.verifiedAddresses !== 'undefined') {
+                data.verifiedAddresses.forEach(function (verifiedAddress) {
+                    verifiedAddresses.push(verifiedAddress);
+                });
+            }
+            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, verifiedAddresses.length > 0 ? verifiedAddresses : undefined));
         });
     };
-    PayIDClient.prototype.resolvePayID = function (payID) {
+    PayIDClient.prototype.validateResolvedPayID = function (payID, data, verify) {
         var _this = this;
         var self = this;
         return new Promise(function (resolve, reject) {
-            self.resolveRawPayID(payID).then(function (data) {
-                if (!payID.startsWith(data.payId)) {
-                    var errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
-                    console.log(errorMsg);
-                    if (!self.tolerant) {
-                        reject({ error: errorMsg });
-                    }
+            if (typeof data.payId === 'undefined') {
+                reject('The resolved PayID does not have a payID field');
+            }
+            else if (!payID.startsWith(data.payId)) {
+                var errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
+                console.log(errorMsg);
+                if (!self.tolerant) {
+                    reject({ error: errorMsg });
+                    return;
                 }
-                self.parsePayIDFromData(data).then(function (resolvedPayId) { return __awaiter(_this, void 0, void 0, function () {
-                    var verificationResult;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(undefined, resolvedPayId)];
-                            case 1:
-                                verificationResult = _a.sent();
-                                if (!verificationResult.verified) {
-                                    reject(verificationResult.errorMessage);
-                                }
-                                else {
-                                    resolve(resolvedPayId);
-                                }
-                                return [2 /*return*/];
+            }
+            self.parsePayIDFromData(data).then(function (resolvedPayId) { return __awaiter(_this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    if ((typeof resolvedPayId.verifiedAddresses === 'undefined'
+                        || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
+                        resolve(resolvedPayId);
+                    }
+                    else if (verify) {
+                        if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
+                            self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(function (thumbprint) { return __awaiter(_this, void 0, void 0, function () {
+                                var verificationResult;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
+                                        case 1:
+                                            verificationResult = _a.sent();
+                                            if (!verificationResult.verified) {
+                                                reject(verificationResult.errorMessage);
+                                            }
+                                            else {
+                                                resolve(resolvedPayId);
+                                            }
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }).catch(function (error) {
+                                reject('Error resolving thumbprint of public key for verified payID');
+                            });
                         }
-                    });
-                }); }).catch(function (error) {
+                        else {
+                            reject('You requested a verification, but provided no lookup service');
+                        }
+                    }
+                    else {
+                        resolve(resolvedPayId);
+                    }
+                    return [2 /*return*/];
+                });
+            }); }).catch(function (error) {
+                reject(error);
+            });
+        });
+    };
+    PayIDClient.prototype.resolvePayID = function (payID, verify) {
+        if (verify === void 0) { verify = false; }
+        var self = this;
+        return new Promise(function (resolve, reject) {
+            self.resolveRawPayID(payID).then(function (data) {
+                self.validateResolvedPayID(payID, data, verify).then(function (resolvedPayID) {
+                    resolve(resolvedPayID);
+                }).catch(function (error) {
                     reject(error);
                 });
             }).catch(function (error) {
@@ -63952,4 +64008,4 @@ var PayIDClient = /** @class */ (function () {
     return PayIDClient;
 }());
 
-export { PayIDAddressTypes, PayIDClient, PayIDHeader, PayIDNetworks, VerifiedPayIDUtils };
+export { PayIDAddressTypes, PayIDClient, PayIDHeader, PayIDNetworks, PayIDPublicKeyThumbprint, VerifiedPayIDUtils };

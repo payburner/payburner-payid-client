@@ -1,4 +1,4 @@
-import {PayIDClient} from '../index';
+import {PayIDClient, PayIDPublicKeyThumbprint, PayIDThumbprintLookupService} from '../index';
 import {XrplMainnet} from "../model/types/XrplMainnet";
 import {AddressDetailsType} from "../model/interfaces/AddressDetailsType";
 import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
@@ -6,6 +6,31 @@ import {PayIDNetworks} from "../model/types/PayIDNetworks";
 import {VerifiedPayIDUtils} from "../index";
 import {UnsignedPayIDAddressImpl} from "../model/impl/UnsignedPayIDAddressImpl";
 import {Address} from "../model/interfaces/Address";
+
+class TestLookupService implements PayIDThumbprintLookupService {
+
+    payIDThumbprintMap = new Map<String, String>();
+
+    setPayIDThumbprint(payID:string, thumbprint:string) {
+        this.payIDThumbprintMap.set(payID, thumbprint);
+    }
+
+    resolvePayIDThumbprint(payID: string): Promise<PayIDPublicKeyThumbprint> {
+        return new Promise<PayIDPublicKeyThumbprint>((resolve, reject)=>{
+            const thumbprint = this.payIDThumbprintMap.get(payID);
+            if (typeof thumbprint !== 'undefined') {
+                resolve( new PayIDPublicKeyThumbprint(payID, thumbprint.toString()));
+            }
+            else {
+                reject({error: 'not found'});
+            }
+        });
+
+    }
+
+}
+
+
 test('Test resolve XRPL MAINNET', async () => {
     const payIDClient = new PayIDClient(true);
     const resolvedPayID = await payIDClient.resolvePayID('LaSourceAfrique$payburner.com');
@@ -23,12 +48,16 @@ test('Test resolve XRPL MAINNET', async () => {
 });
 
 test('Test Signing and Verification', async () => {
+
+    const testLookupService = new TestLookupService();
+
     const payIDUtils = new VerifiedPayIDUtils();
-    const payIDClient = new PayIDClient(true);
+    const payIDClient = new PayIDClient(true, testLookupService);
     const key = await payIDUtils.newKey();
+
     console.log(key.toJSON(false));
-    expect(key.kty ).toBe('RSA')
-    expect(key.length).toBe(2048);
+    expect(key.kty ).toBe('EC')
+    expect(key.length).toBe(256);
     console.log(key.toPEM(false));
 
     const pem = key.toPEM(false);
@@ -49,7 +78,7 @@ test('Test Signing and Verification', async () => {
         ]
     };
 
-    const resolvedPayID = await payIDClient.parsePayIDFromData(rawPayId );
+    const resolvedPayID = await payIDClient.parsePayIDFromData(rawPayId);
     const address = payIDClient.seekAddressOfType(resolvedPayID, new XrplMainnet());
 
     const unsigned = new UnsignedPayIDAddressImpl(
@@ -69,6 +98,10 @@ test('Test Signing and Verification', async () => {
 
     const verificationResult = await  payIDUtils.verifyPayID(verifiedThumbprint.toString('hex'), signedPayId);
     console.log('VERIFICATION RESULT:' + JSON.stringify(verificationResult, null, 2));
+    testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', originalThumbprint.toString('hex'));
+    console.log('VALIDATE:' + JSON.stringify(
+        await payIDClient.validateResolvedPayID('payburn_test$payid.mayurbhandary.com', signedPayId, true), null, 2));
+
 });
 
 test('Test parse raw XRPL MAINNET', async () => {

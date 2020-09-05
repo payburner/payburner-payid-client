@@ -45,10 +45,13 @@ import { PayIDAddressTypes } from "../model/types/PayIDAddressTypes";
 import { PayIDHeader } from "../model/types/PayIDHeader";
 import { VerifiedPayIDUtils } from "./VerifiedPayIDUtils";
 var PayIDClient = /** @class */ (function () {
-    function PayIDClient(tolerant) {
+    function PayIDClient(tolerant, payIDThumbprintServiceLookup) {
         if (tolerant === void 0) { tolerant = true; }
         this.tolerant = tolerant;
         this.verifiedPayIDUtils = new VerifiedPayIDUtils();
+        if (typeof payIDThumbprintServiceLookup !== 'undefined') {
+            this.payIDThumbprintServiceLookup = payIDThumbprintServiceLookup;
+        }
     }
     PayIDClient.prototype.isASCII = function (input) {
         // eslint-disable-next-line no-control-regex -- The ASCII regex uses control characters
@@ -78,10 +81,12 @@ var PayIDClient = /** @class */ (function () {
                 reject({ error: 'unparseable payid' });
                 return;
             }
-            axios.get('https://' + parsedPayID.host + '/' + parsedPayID.path, { headers: {
+            axios.get('https://' + parsedPayID.host + '/' + parsedPayID.path, {
+                headers: {
                     'Accept': (typeof payIDHeader === 'undefined' ? PayIDHeader.ALL : payIDHeader),
                     'PayID-Version': '1.0'
-                } })
+                }
+            })
                 .then(function (response) {
                 resolve(response.data);
             }).catch(function (error) {
@@ -97,6 +102,7 @@ var PayIDClient = /** @class */ (function () {
                 reject({ error: errorMsg });
             }
             var addresses = new Array();
+            var verifiedAddresses = new Array();
             data.addresses.forEach(function (address) {
                 var addressDetailsType = address.addressDetailsType;
                 var addressDetails = address.addressDetails;
@@ -148,38 +154,80 @@ var PayIDClient = /** @class */ (function () {
                 var environment = address.environment;
                 addresses.push(new ResolvedAddress(addressDetailsVal, addressDetailsTypeVal, paymentNetwork, environment));
             });
-            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, undefined));
+            if (typeof data.verifiedAddresses !== 'undefined') {
+                data.verifiedAddresses.forEach(function (verifiedAddress) {
+                    verifiedAddresses.push(verifiedAddress);
+                });
+            }
+            resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined, verifiedAddresses.length > 0 ? verifiedAddresses : undefined));
         });
     };
-    PayIDClient.prototype.resolvePayID = function (payID) {
+    PayIDClient.prototype.validateResolvedPayID = function (payID, data, verify) {
         var _this = this;
         var self = this;
         return new Promise(function (resolve, reject) {
-            self.resolveRawPayID(payID).then(function (data) {
-                if (!payID.startsWith(data.payId)) {
-                    var errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
-                    console.log(errorMsg);
-                    if (!self.tolerant) {
-                        reject({ error: errorMsg });
-                    }
+            if (typeof data.payId === 'undefined') {
+                reject('The resolved PayID does not have a payID field');
+            }
+            else if (!payID.startsWith(data.payId)) {
+                var errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
+                console.log(errorMsg);
+                if (!self.tolerant) {
+                    reject({ error: errorMsg });
+                    return;
                 }
-                self.parsePayIDFromData(data).then(function (resolvedPayId) { return __awaiter(_this, void 0, void 0, function () {
-                    var verificationResult;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(undefined, resolvedPayId)];
-                            case 1:
-                                verificationResult = _a.sent();
-                                if (!verificationResult.verified) {
-                                    reject(verificationResult.errorMessage);
-                                }
-                                else {
-                                    resolve(resolvedPayId);
-                                }
-                                return [2 /*return*/];
+            }
+            self.parsePayIDFromData(data).then(function (resolvedPayId) { return __awaiter(_this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    if ((typeof resolvedPayId.verifiedAddresses === 'undefined'
+                        || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
+                        resolve(resolvedPayId);
+                    }
+                    else if (verify) {
+                        if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
+                            self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(function (thumbprint) { return __awaiter(_this, void 0, void 0, function () {
+                                var verificationResult;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
+                                        case 1:
+                                            verificationResult = _a.sent();
+                                            if (!verificationResult.verified) {
+                                                reject(verificationResult.errorMessage);
+                                            }
+                                            else {
+                                                resolve(resolvedPayId);
+                                            }
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }).catch(function (error) {
+                                reject('Error resolving thumbprint of public key for verified payID');
+                            });
                         }
-                    });
-                }); }).catch(function (error) {
+                        else {
+                            reject('You requested a verification, but provided no lookup service');
+                        }
+                    }
+                    else {
+                        resolve(resolvedPayId);
+                    }
+                    return [2 /*return*/];
+                });
+            }); }).catch(function (error) {
+                reject(error);
+            });
+        });
+    };
+    PayIDClient.prototype.resolvePayID = function (payID, verify) {
+        if (verify === void 0) { verify = false; }
+        var self = this;
+        return new Promise(function (resolve, reject) {
+            self.resolveRawPayID(payID).then(function (data) {
+                self.validateResolvedPayID(payID, data, verify).then(function (resolvedPayID) {
+                    resolve(resolvedPayID);
+                }).catch(function (error) {
                     reject(error);
                 });
             }).catch(function (error) {

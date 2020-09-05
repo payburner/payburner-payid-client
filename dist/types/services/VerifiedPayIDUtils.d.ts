@@ -5,7 +5,6 @@ import { PaymentInformation } from "../model/interfaces/PaymentInformation";
 import { Address } from "../model/interfaces/Address";
 import { VerificationResult } from "../model/impl/VerificationResult";
 export declare class VerifiedPayIDUtils {
-    constructor();
     newKeyStore(): jose.JWK.KeyStore;
     newKey(): Promise<jose.JWK.Key>;
     fromPEM(pem: string): Promise<jose.JWK.Key>;

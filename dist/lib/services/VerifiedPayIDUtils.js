@@ -47,7 +47,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return jose.JWK.createKeyStore();
     };
     VerifiedPayIDUtils.prototype.newKey = function () {
-        return this.newKeyStore().generate("RSA", 2048, { alg: "RS512", key_ops: ["sign", "decrypt", "unwrap"] });
+        return this.newKeyStore().generate("EC", "P-256", { alg: "ES256", key_ops: ["sign"] });
     };
     VerifiedPayIDUtils.prototype.fromPEM = function (pem) {
         return jose.JWK.createKeyStore().add(pem, 'pem');
@@ -89,6 +89,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return true;
     };
     VerifiedPayIDUtils.prototype.verifyPayID = function (thumbprint, input) {
+        var _this = this;
         var self = this;
         return new Promise(function (resolve, reject) {
             if (typeof input.verifiedAddresses === 'undefined' || input.verifiedAddresses === null || input.verifiedAddresses.length === 0) {
@@ -120,7 +121,6 @@ var VerifiedPayIDUtils = /** @class */ (function () {
                 });
                 Promise.all(promises_1).then(function (values) {
                     // now we need to verify the thumbprint
-                    var _this = this;
                     var verifiedAllThumbprints = true;
                     values.forEach(function (verificationResult) { return __awaiter(_this, void 0, void 0, function () {
                         var verifiedThumbprint;
@@ -163,7 +163,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
             compact: false,
             fields: {
                 name: 'identityKey',
-                alg: 'RS512',
+                alg: 'ES256',
                 typ: 'JOSE+JSON',
                 crit: ['name']
             },
@@ -174,7 +174,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
         return new Promise(function (resolve, reject) {
             jose.JWS.createSign(opts, {
                 key: key,
-                reference: "jwk"
+                reference: 'jwk'
             }).update(JSON.stringify(input), "utf-8").final().then(function (signed) {
                 var unknownData = signed;
                 resolve(unknownData);

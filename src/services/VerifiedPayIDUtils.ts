@@ -12,17 +12,12 @@ import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
 
 export class VerifiedPayIDUtils {
 
-    constructor() {
-
-    }
-
-
     newKeyStore(): jose.JWK.KeyStore {
         return jose.JWK.createKeyStore();
     }
 
     newKey(): Promise<jose.JWK.Key> {
-        return this.newKeyStore().generate("RSA", 2048, {alg: "RS512", key_ops: ["sign", "decrypt", "unwrap"]});
+        return this.newKeyStore().generate("EC", "P-256", {alg: "ES256", key_ops: ["sign"]});
     }
 
     fromPEM(pem: string): Promise<jose.JWK.Key> {
@@ -38,8 +33,8 @@ export class VerifiedPayIDUtils {
                 address as Address);
             promises.push(self.signPayIDAddress(key, unsigned))
         });
-        return new Promise<PaymentInformation>(function(resolve, reject) {
-            Promise.all(promises as Array<Promise<SignedPayIDAddress>>).then(function(values){
+        return new Promise<PaymentInformation>((resolve, reject) => {
+            Promise.all(promises).then((values) => {
                resolve(new ResolvedPayID(input.addresses, input.payId, input.memo, input.proofOfControlSignature, values))
             });
         })
@@ -70,9 +65,11 @@ export class VerifiedPayIDUtils {
         return true;
     }
 
+    
+
     verifyPayID(thumbprint: string|undefined, input: PaymentInformation): Promise<VerificationResult> {
         const self = this;
-        return new Promise<VerificationResult>(function(resolve, reject) {
+        return new Promise<VerificationResult>((resolve, reject) => {
           if (typeof input.verifiedAddresses === 'undefined' || input.verifiedAddresses === null || input.verifiedAddresses.length === 0) {
               resolve(new VerificationResult(true));
           }
@@ -84,7 +81,7 @@ export class VerifiedPayIDUtils {
           }
           else {
               let verifiedAllMatch = true;
-              for (var idx = 0; idx < input.addresses.length; idx++) {
+              for (let idx = 0; idx < input.addresses.length; idx++) {
                   if (!self.matchAddress(input.addresses[idx], input.verifiedAddresses[idx].payload)) {
                       console.log('ADDRESS:' + JSON.stringify(input.addresses[idx]));
                       console.log('PAYLOAD:' + atob(input.verifiedAddresses[idx].payload));
@@ -101,7 +98,7 @@ export class VerifiedPayIDUtils {
               input.verifiedAddresses.forEach((verifiedAddress) => {
                   promises.push(self.verifySignedPayIDAddress(verifiedAddress));
               });
-              Promise.all(promises as Array<Promise<jose.JWS.VerificationResult>>).then(function(values){
+              Promise.all(promises).then((values) =>{
                   // now we need to verify the thumbprint
 
                     let verifiedAllThumbprints = true;
@@ -120,7 +117,7 @@ export class VerifiedPayIDUtils {
                         resolve(new VerificationResult(true));
                     }
 
-              }).catch(function(error) {
+              }).catch((error) => {
                   resolve(new VerificationResult(false, VerificationErrorCode.SYSTEM_ERROR_VERIFYING, 'We encountered a system error verifying the addresses -- ' + (typeof error === 'string'?error:JSON.stringify(error))));
               });
           }
@@ -138,11 +135,11 @@ export class VerifiedPayIDUtils {
     }
 
     signPayIDAddress(key: jose.JWK.Key, input: UnsignedPayIDAddress): Promise<SignedPayIDAddress> {
-        var opts = {
+        const opts = {
             compact: false,
             fields: {
                 name: 'identityKey',
-                alg: 'RS512',
+                alg: 'ES256',
                 typ: 'JOSE+JSON',
                 crit: ['name']
             },
@@ -150,14 +147,14 @@ export class VerifiedPayIDUtils {
                 name: true
             }
         };
-        return new Promise<SignedPayIDAddress>(function (resolve, reject) {
+        return new Promise<SignedPayIDAddress>( (resolve, reject) => {
             jose.JWS.createSign(opts, {
-                key: key,
-                reference: "jwk"
-            }).update(JSON.stringify(input), "utf-8").final().then(function (signed) {
+                key,
+                reference: 'jwk'
+            }).update(JSON.stringify(input), "utf-8").final().then( (signed) => {
                 const unknownData = signed as unknown;
                 resolve(unknownData as SignedPayIDAddress);
-            }).catch(function (error) {
+            }).catch( (error) => {
                 reject(error);
             });
         });
