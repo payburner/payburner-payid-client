@@ -182,17 +182,22 @@ var PayIDClient = /** @class */ (function () {
                 return __generator(this, function (_a) {
                     if ((typeof resolvedPayId.verifiedAddresses === 'undefined'
                         || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
+                        console.log('No verified addresses presented so we are returning OK');
                         resolve(resolvedPayId);
                     }
                     else if (verify) {
+                        console.log('Verify set to true, so let us verify');
                         if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
                             self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(function (thumbprint) { return __awaiter(_this, void 0, void 0, function () {
                                 var verificationResult;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
-                                        case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
+                                        case 0:
+                                            console.log('Calling the verifyPayID Method with thumbprint:' + thumbprint.thumbprint);
+                                            return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
                                         case 1:
                                             verificationResult = _a.sent();
+                                            console.log('Verification result returned from verifyPayID method:' + JSON.stringify(verificationResult));
                                             if (!verificationResult.verified) {
                                                 reject(verificationResult.errorMessage);
                                             }
@@ -226,6 +231,7 @@ var PayIDClient = /** @class */ (function () {
         return new Promise(function (resolve, reject) {
             self.resolveRawPayID(payID).then(function (data) {
                 self.validateResolvedPayID(payID, data, verify).then(function (resolvedPayID) {
+                    console.log('Validation Result:' + JSON.stringify(resolvedPayID, null, 2));
                     resolve(resolvedPayID);
                 }).catch(function (error) {
                     reject(error);

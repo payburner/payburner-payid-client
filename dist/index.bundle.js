@@ -69306,7 +69306,6 @@ var Payburner = (function (exports) {
             return true;
         };
         VerifiedPayIDUtils.prototype.verifyPayID = function (thumbprint, input) {
-            var _this = this;
             var self = this;
             return new Promise(function (resolve, reject) {
                 if (typeof input.verifiedAddresses === 'undefined' || input.verifiedAddresses === null || input.verifiedAddresses.length === 0) {
@@ -69322,30 +69321,27 @@ var Payburner = (function (exports) {
                     });
                     Promise.all(promises_1).then(function (values) {
                         // now we need to verify the thumbprint
-                        var verifiedAllThumbprints = true;
-                        values.forEach(function (verificationResult) { return __awaiter(_this, void 0, void 0, function () {
-                            var verifiedThumbprint;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
-                                        return [4 /*yield*/, verificationResult.key.thumbprint('SHA-256')];
-                                    case 1:
-                                        verifiedThumbprint = _a.sent();
-                                        if (thumbprint !== verifiedThumbprint.toString('hex')) {
-                                            console.log('Failed Thumbprint Verification.  Calculated:' + verifiedThumbprint.toString('hex') + ', Provided:' + thumbprint);
-                                            verifiedAllThumbprints = false;
-                                        }
-                                        return [2 /*return*/];
+                        var thumbprintPromises = new Array();
+                        values.forEach(function (verificationResult) {
+                            console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
+                            thumbprintPromises.push(verificationResult.key.thumbprint('SHA-256'));
+                        });
+                        Promise.all(thumbprintPromises).then(function (thumbprintValues) {
+                            var verifiedAllThumbprints = true;
+                            thumbprintValues.forEach(function (buffer) {
+                                var buff = buffer;
+                                if (thumbprint !== buff.toString('hex')) {
+                                    console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
+                                    verifiedAllThumbprints = false;
                                 }
                             });
-                        }); });
-                        if (!verifiedAllThumbprints) {
-                            resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
-                        }
-                        else {
-                            resolve(new VerificationResult(true));
-                        }
+                            if (!verifiedAllThumbprints) {
+                                resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
+                            }
+                            else {
+                                resolve(new VerificationResult(true));
+                            }
+                        });
                     }).catch(function (error) {
                         console.log('ERROR:' + error);
                         console.log('ERROR:' + JSON.stringify(error));
@@ -69530,17 +69526,22 @@ var Payburner = (function (exports) {
                     return __generator(this, function (_a) {
                         if ((typeof resolvedPayId.verifiedAddresses === 'undefined'
                             || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
+                            console.log('No verified addresses presented so we are returning OK');
                             resolve(resolvedPayId);
                         }
                         else if (verify) {
+                            console.log('Verify set to true, so let us verify');
                             if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
                                 self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(function (thumbprint) { return __awaiter(_this, void 0, void 0, function () {
                                     var verificationResult;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0: return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
+                                            case 0:
+                                                console.log('Calling the verifyPayID Method with thumbprint:' + thumbprint.thumbprint);
+                                                return [4 /*yield*/, self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId)];
                                             case 1:
                                                 verificationResult = _a.sent();
+                                                console.log('Verification result returned from verifyPayID method:' + JSON.stringify(verificationResult));
                                                 if (!verificationResult.verified) {
                                                     reject(verificationResult.errorMessage);
                                                 }
@@ -69574,6 +69575,7 @@ var Payburner = (function (exports) {
             return new Promise(function (resolve, reject) {
                 self.resolveRawPayID(payID).then(function (data) {
                     self.validateResolvedPayID(payID, data, verify).then(function (resolvedPayID) {
+                        console.log('Validation Result:' + JSON.stringify(resolvedPayID, null, 2));
                         resolve(resolvedPayID);
                     }).catch(function (error) {
                         reject(error);

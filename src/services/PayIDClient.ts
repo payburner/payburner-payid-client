@@ -170,12 +170,16 @@ export class PayIDClient {
             self.parsePayIDFromData(data).then(async (resolvedPayId) => {
                 if ((typeof resolvedPayId.verifiedAddresses === 'undefined'
                     || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
+                    console.log('No verified addresses presented so we are returning OK');
                     resolve(resolvedPayId);
                 }
                 else if (verify) {
+                    console.log('Verify set to true, so let us verify');
                     if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
                         self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(async (thumbprint) => {
+                            console.log('Calling the verifyPayID Method with thumbprint:' + thumbprint.thumbprint);
                             const verificationResult = await self.verifiedPayIDUtils.verifyPayID(thumbprint.thumbprint, resolvedPayId);
+                            console.log('Verification result returned from verifyPayID method:' + JSON.stringify(verificationResult));
                             if (!verificationResult.verified) {
                                 reject(verificationResult.errorMessage);
                             } else {
@@ -203,6 +207,7 @@ export class PayIDClient {
         return new Promise<ResolvedPayID>((resolve, reject) => {
             self.resolveRawPayID(payID).then((data) => {
                 self.validateResolvedPayID(payID, data, verify).then((resolvedPayID) => {
+                    console.log('Validation Result:' + JSON.stringify(resolvedPayID, null, 2));
                     resolve(resolvedPayID);
                 }).catch((error)=>{
                     reject(error);

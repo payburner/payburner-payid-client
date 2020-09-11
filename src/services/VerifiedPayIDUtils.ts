@@ -85,21 +85,28 @@ export class VerifiedPayIDUtils {
               Promise.all(promises).then((values) =>{
                   // now we need to verify the thumbprint
 
-                    let verifiedAllThumbprints = true;
-                    values.forEach( async (verificationResult: jose.JWS.VerificationResult) => {
-                        console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
-                        const verifiedThumbprint = await verificationResult.key.thumbprint('SHA-256');
-                        if (thumbprint !== verifiedThumbprint.toString('hex')) {
-                            console.log('Failed Thumbprint Verification.  Calculated:' + verifiedThumbprint.toString('hex') + ', Provided:' + thumbprint);
-                            verifiedAllThumbprints = false;
+                    const thumbprintPromises = new Array<Promise<Buffer>>();
+                    values.forEach( (verificationResult: jose.JWS.VerificationResult) => {
+                      console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
+                      thumbprintPromises.push(verificationResult.key.thumbprint('SHA-256'));
+                    });
+
+                    Promise.all(thumbprintPromises).then((thumbprintValues)=>{
+                        let verifiedAllThumbprints = true;
+                        thumbprintValues.forEach((buffer)=>{
+                            const buff = buffer as Buffer;
+                            if (thumbprint !== buff.toString('hex')) {
+                                console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
+                                verifiedAllThumbprints = false;
+                            }
+                        });
+                        if (!verifiedAllThumbprints) {
+                            resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
+                        }
+                        else {
+                            resolve(new VerificationResult(true));
                         }
                     });
-                    if (!verifiedAllThumbprints) {
-                        resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_KEYS_DO_NOT_MATCH_THUMBPRINT, 'The payID has verified addresses and the thumbprint does not match the embedded keys'));
-                    }
-                    else {
-                        resolve(new VerificationResult(true));
-                    }
 
               }).catch((error) => {
                   console.log('ERROR:' + error);

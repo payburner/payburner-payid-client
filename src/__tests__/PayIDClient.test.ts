@@ -71,7 +71,7 @@ test('Test Resolving and Verification', async () => {
 
     const testLookupService = new TestLookupService();
     const payIDClient = new PayIDClient(true, testLookupService);
-    testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', '590KX0SHi7yXmE5BrCuR2P1_pNdlkQby0kt-7H-H08')
+    testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', 'fb9f74297d121e2ef25e613906b0ae4763f5fe935d96441bcb492dfbb1fe1f4f')
     const signed = {"addresses":[],"payId":"payburn_test$payid.mayurbhandary.com","verifiedAddresses":[{"signatures":[{"name":"identityKey","protected":"eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiY3J2IjoiUC0yNTYiLCJ4IjoiMEE4RjhSdG54b3NmbFdCd1h3ajZkMExGWE9OSEllQlVxeXhJMDNrR1V0MCIsInkiOiJIdmFiem9GUWk0Mk9QaVp5bmRaTjhESTNRQjFibV82dFlweFRhYWxiOEJJIiwia3R5IjoiRUMiLCJraWQiOiItNTkwS1gwU0hpN3lYbUU1QnJDdVIyUDFfcE5kbGtRYnkwa3QtN0gtSDA4In19","signature":"a6H74ESIRMcnHxOwoLN0SsyIaDsSEU8lXZL4VHULvXy8Q-NssjVQ9LxY9TV-RcDYedhOY3wBKr2FpBoycNanjw"}],"payload":"{\"payId\":\"payburn_test$payid.mayurbhandary.com\",\"payIdAddress\":{\"paymentNetwork\":\"XRPL\",\"environment\":\"TESTNET\",\"addressDetailsType\":\"CryptoAddressDetails\",\"addressDetails\":{\"address\":\"rU3mTFnefto99VcEECBAbQseRMEKTCLGxr\"}}}"}]};
     const resolved = await payIDClient.validateResolvedPayID('payburn_test$payid.mayurbhandary.com', signed,true);
     console.log('Validated:' + JSON.stringify(resolved));
