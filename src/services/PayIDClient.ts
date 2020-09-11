@@ -154,6 +154,7 @@ export class PayIDClient {
 
     validateResolvedPayID(payID: string, data: ResolvedPayID, verify: boolean) : Promise<ResolvedPayID>  {
         const self = this;
+
         return new Promise((resolve, reject) => {
             if (typeof data.payId === 'undefined') {
                 reject('The resolved PayID does not have a payID field');

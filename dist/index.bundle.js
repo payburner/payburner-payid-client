@@ -69264,7 +69264,7 @@ var Payburner = (function (exports) {
             return lib_3.createKeyStore();
         };
         VerifiedPayIDUtils.prototype.newKey = function () {
-            return this.newKeyStore().generate("EC", "P-256", { alg: "ES256", key_ops: ["sign"] });
+            return this.newKeyStore().generate("EC", "P-256", { alg: "ES256", key_ops: ["sign", "verify"] });
         };
         VerifiedPayIDUtils.prototype.fromPEM = function (pem) {
             return lib_3.createKeyStore().add(pem, 'pem');
@@ -69315,23 +69315,7 @@ var Payburner = (function (exports) {
                 else if (typeof thumbprint === 'undefined' || thumbprint === null) {
                     resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_BUT_NO_THUMBPRINT, 'The payID has verified addresses, but no thumbprint was provided'));
                 }
-                else if (input.addresses.length !== input.verifiedAddresses.length) {
-                    resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_IN_LENGTH, 'The payID has verified addresses, but they differ in length from the addresses provided.'));
-                }
                 else {
-                    var verifiedAllMatch = true;
-                    for (var idx = 0; idx < input.addresses.length; idx++) {
-                        if (!self.matchAddress(input.addresses[idx], input.verifiedAddresses[idx].payload)) {
-                            console.log('ADDRESS:' + JSON.stringify(input.addresses[idx]));
-                            console.log('PAYLOAD:' + atob(input.verifiedAddresses[idx].payload));
-                            verifiedAllMatch = false;
-                            break;
-                        }
-                    }
-                    if (!verifiedAllMatch) {
-                        resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_CONTENT, 'The addresses in the verified address array differ from the the ones in the address array'));
-                        return;
-                    }
                     var promises_1 = new Array();
                     input.verifiedAddresses.forEach(function (verifiedAddress) {
                         promises_1.push(self.verifySignedPayIDAddress(verifiedAddress));
@@ -69343,12 +69327,13 @@ var Payburner = (function (exports) {
                             var verifiedThumbprint;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
-                                    case 0: return [4 /*yield*/, verificationResult.key.thumbprint('SHA-256')];
+                                    case 0:
+                                        console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
+                                        return [4 /*yield*/, verificationResult.key.thumbprint('SHA-256')];
                                     case 1:
                                         verifiedThumbprint = _a.sent();
                                         if (thumbprint !== verifiedThumbprint.toString('hex')) {
-                                            console.log('Verified:' + verifiedThumbprint.toString('hex'));
-                                            console.log('Thumbprint:' + thumbprint);
+                                            console.log('Failed Thumbprint Verification.  Calculated:' + verifiedThumbprint.toString('hex') + ', Provided:' + thumbprint);
                                             verifiedAllThumbprints = false;
                                         }
                                         return [2 /*return*/];
@@ -69362,16 +69347,20 @@ var Payburner = (function (exports) {
                             resolve(new VerificationResult(true));
                         }
                     }).catch(function (error) {
+                        console.log('ERROR:' + error);
+                        console.log('ERROR:' + JSON.stringify(error));
                         resolve(new VerificationResult(false, VerificationErrorCode.SYSTEM_ERROR_VERIFYING, 'We encountered a system error verifying the addresses -- ' + (typeof error === 'string' ? error : JSON.stringify(error))));
                     });
                 }
             });
         };
         VerifiedPayIDUtils.prototype.verifySignedPayIDAddress = function (input) {
+            console.log('Verifying payID Address:' + JSON.stringify(input, null, 2));
             return lib_4.createVerify().verify(input, {
                 allowEmbeddedKey: true,
                 handlers: {
-                    name: true
+                    name: true,
+                    b64: true
                 }
             });
         };

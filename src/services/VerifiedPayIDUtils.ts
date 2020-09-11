@@ -17,7 +17,7 @@ export class VerifiedPayIDUtils {
     }
 
     newKey(): Promise<jose.JWK.Key> {
-        return this.newKeyStore().generate("EC", "P-256", {alg: "ES256", key_ops: ["sign"]});
+        return this.newKeyStore().generate("EC", "P-256", {alg: "ES256", key_ops: ["sign", "verify"]});
     }
 
     fromPEM(pem: string): Promise<jose.JWK.Key> {
@@ -76,23 +76,7 @@ export class VerifiedPayIDUtils {
           else if (typeof thumbprint === 'undefined' || thumbprint === null) {
               resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_BUT_NO_THUMBPRINT, 'The payID has verified addresses, but no thumbprint was provided'));
           }
-          else if (input.addresses.length !== input.verifiedAddresses.length) {
-              resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_IN_LENGTH, 'The payID has verified addresses, but they differ in length from the addresses provided.'));
-          }
           else {
-              let verifiedAllMatch = true;
-              for (let idx = 0; idx < input.addresses.length; idx++) {
-                  if (!self.matchAddress(input.addresses[idx], input.verifiedAddresses[idx].payload)) {
-                      console.log('ADDRESS:' + JSON.stringify(input.addresses[idx]));
-                      console.log('PAYLOAD:' + atob(input.verifiedAddresses[idx].payload));
-                     verifiedAllMatch = false;
-                     break;
-                  }
-              }
-              if (!verifiedAllMatch) {
-                  resolve(new VerificationResult(false, VerificationErrorCode.VERIFIED_ADDRESSES_AND_ADDRESSES_DIFFER_CONTENT, 'The addresses in the verified address array differ from the the ones in the address array'));
-                  return;
-              }
 
               const promises = new Array<Promise<jose.JWS.VerificationResult>>();
               input.verifiedAddresses.forEach((verifiedAddress) => {
@@ -103,10 +87,10 @@ export class VerifiedPayIDUtils {
 
                     let verifiedAllThumbprints = true;
                     values.forEach( async (verificationResult: jose.JWS.VerificationResult) => {
+                        console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
                         const verifiedThumbprint = await verificationResult.key.thumbprint('SHA-256');
                         if (thumbprint !== verifiedThumbprint.toString('hex')) {
-                            console.log('Verified:' + verifiedThumbprint.toString('hex'));
-                            console.log('Thumbprint:' + thumbprint);
+                            console.log('Failed Thumbprint Verification.  Calculated:' + verifiedThumbprint.toString('hex') + ', Provided:' + thumbprint);
                             verifiedAllThumbprints = false;
                         }
                     });
@@ -118,6 +102,8 @@ export class VerifiedPayIDUtils {
                     }
 
               }).catch((error) => {
+                  console.log('ERROR:' + error);
+                  console.log('ERROR:' + JSON.stringify(error));
                   resolve(new VerificationResult(false, VerificationErrorCode.SYSTEM_ERROR_VERIFYING, 'We encountered a system error verifying the addresses -- ' + (typeof error === 'string'?error:JSON.stringify(error))));
               });
           }
@@ -126,13 +112,16 @@ export class VerifiedPayIDUtils {
 
     verifySignedPayIDAddress(input: SignedPayIDAddress): Promise<jose.JWS.VerificationResult> {
 
+        console.log('Verifying payID Address:' + JSON.stringify(input, null, 2));
         return jose.JWS.createVerify().verify(input, {
             allowEmbeddedKey: true,
             handlers: {
-                name: true
+                name: true,
+                b64: true
             }
         });
     }
+
 
     signPayIDAddress(key: jose.JWK.Key, input: UnsignedPayIDAddress): Promise<SignedPayIDAddress> {
         const opts = {
@@ -160,4 +149,5 @@ export class VerifiedPayIDUtils {
         });
 
     }
+
 }

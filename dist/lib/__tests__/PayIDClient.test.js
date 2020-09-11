@@ -39,7 +39,6 @@ import { XrplMainnet } from "../model/types/XrplMainnet";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
 import { PayIDNetworks } from "../model/types/PayIDNetworks";
 import { VerifiedPayIDUtils } from "../services/VerifiedPayIDUtils";
-import { UnsignedPayIDAddressImpl } from "../model/impl/UnsignedPayIDAddressImpl";
 var TestLookupService = /** @class */ (function () {
     function TestLookupService() {
         this.payIDThumbprintMap = new Map();
@@ -86,16 +85,16 @@ test('Test resolve XRPL MAINNET', function () { return __awaiter(void 0, void 0,
     });
 }); });
 test('Test Signing and Verification', function () { return __awaiter(void 0, void 0, void 0, function () {
-    var testLookupService, payIDUtils, payIDClient, key, pem, key2, rawPayId, resolvedPayID, address, unsigned, signed, originalThumbprint, verif, verifiedThumbprint, signedPayId, verificationResult, _a, _b, _c, _d, _e;
-    return __generator(this, function (_f) {
-        switch (_f.label) {
+    var testLookupService, payIDUtils, payIDClient, key, pem, key2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 testLookupService = new TestLookupService();
                 payIDUtils = new VerifiedPayIDUtils();
                 payIDClient = new PayIDClient(true, testLookupService);
                 return [4 /*yield*/, payIDUtils.newKey()];
             case 1:
-                key = _f.sent();
+                key = _a.sent();
                 console.log(key.toJSON(false));
                 expect(key.kty).toBe('EC');
                 expect(key.length).toBe(256);
@@ -103,56 +102,29 @@ test('Test Signing and Verification', function () { return __awaiter(void 0, voi
                 pem = key.toPEM(false);
                 return [4 /*yield*/, payIDUtils.fromPEM(pem)];
             case 2:
-                key2 = _f.sent();
+                key2 = _a.sent();
                 console.log(key2.toJSON(false));
-                rawPayId = {
-                    "payId": "payburn_test$payid.mayurbhandary.com",
-                    "addresses": [
-                        {
-                            "paymentNetwork": "XRPL",
-                            "environment": "MAINNET",
-                            "addressDetailsType": "CryptoAddressDetails",
-                            "addressDetails": {
-                                "address": "rU3mTFnefto99VcEECBAbQseRMEKTCLGxr"
-                            }
-                        }
-                    ]
-                };
-                return [4 /*yield*/, payIDClient.parsePayIDFromData(rawPayId)];
-            case 3:
-                resolvedPayID = _f.sent();
-                address = payIDClient.seekAddressOfType(resolvedPayID, new XrplMainnet());
-                unsigned = new UnsignedPayIDAddressImpl(resolvedPayID.payId, address);
-                return [4 /*yield*/, payIDUtils.signPayIDAddress(key, unsigned)];
-            case 4:
-                signed = _f.sent();
-                console.log('SIGNED:' + JSON.stringify(signed, null, 2));
-                return [4 /*yield*/, key.thumbprint('SHA-256')];
-            case 5:
-                originalThumbprint = _f.sent();
-                return [4 /*yield*/, payIDUtils.verifySignedPayIDAddress(signed)];
-            case 6:
-                verif = _f.sent();
-                return [4 /*yield*/, verif.key.thumbprint('SHA-256')];
-            case 7:
-                verifiedThumbprint = _f.sent();
-                expect(verifiedThumbprint.toString('hex')).toBe(originalThumbprint.toString('hex'));
-                return [4 /*yield*/, payIDUtils.signPayID(key, resolvedPayID)];
-            case 8:
-                signedPayId = _f.sent();
-                console.log('SIGNED PAYID:' + JSON.stringify(signedPayId, null, 2));
-                console.log('THUMBPRINT:' + verifiedThumbprint.toString('hex'));
-                return [4 /*yield*/, payIDUtils.verifyPayID(verifiedThumbprint.toString('hex'), signedPayId)];
-            case 9:
-                verificationResult = _f.sent();
-                console.log('VERIFICATION RESULT:' + JSON.stringify(verificationResult, null, 2));
-                testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', originalThumbprint.toString('hex'));
-                _b = (_a = console).log;
-                _c = 'VALIDATE:';
-                _e = (_d = JSON).stringify;
-                return [4 /*yield*/, payIDClient.validateResolvedPayID('payburn_test$payid.mayurbhandary.com', signedPayId, true)];
-            case 10:
-                _b.apply(_a, [_c + _e.apply(_d, [_f.sent(), null, 2])]);
+                return [2 /*return*/];
+        }
+    });
+}); });
+test('Test Resolving and Verification', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var testLookupService, payIDClient, signed, resolved, resolved2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                testLookupService = new TestLookupService();
+                payIDClient = new PayIDClient(true, testLookupService);
+                testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', '590KX0SHi7yXmE5BrCuR2P1_pNdlkQby0kt-7H-H08');
+                signed = { "addresses": [], "payId": "payburn_test$payid.mayurbhandary.com", "verifiedAddresses": [{ "signatures": [{ "name": "identityKey", "protected": "eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiY3J2IjoiUC0yNTYiLCJ4IjoiMEE4RjhSdG54b3NmbFdCd1h3ajZkMExGWE9OSEllQlVxeXhJMDNrR1V0MCIsInkiOiJIdmFiem9GUWk0Mk9QaVp5bmRaTjhESTNRQjFibV82dFlweFRhYWxiOEJJIiwia3R5IjoiRUMiLCJraWQiOiItNTkwS1gwU0hpN3lYbUU1QnJDdVIyUDFfcE5kbGtRYnkwa3QtN0gtSDA4In19", "signature": "a6H74ESIRMcnHxOwoLN0SsyIaDsSEU8lXZL4VHULvXy8Q-NssjVQ9LxY9TV-RcDYedhOY3wBKr2FpBoycNanjw" }], "payload": "{\"payId\":\"payburn_test$payid.mayurbhandary.com\",\"payIdAddress\":{\"paymentNetwork\":\"XRPL\",\"environment\":\"TESTNET\",\"addressDetailsType\":\"CryptoAddressDetails\",\"addressDetails\":{\"address\":\"rU3mTFnefto99VcEECBAbQseRMEKTCLGxr\"}}}" }] };
+                return [4 /*yield*/, payIDClient.validateResolvedPayID('payburn_test$payid.mayurbhandary.com', signed, true)];
+            case 1:
+                resolved = _a.sent();
+                console.log('Validated:' + JSON.stringify(resolved));
+                return [4 /*yield*/, payIDClient.resolvePayID('payburn_test$payid.mayurbhandary.com', true)];
+            case 2:
+                resolved2 = _a.sent();
+                console.log('Resolved:' + JSON.stringify(resolved2, null, 2));
                 return [2 /*return*/];
         }
     });
