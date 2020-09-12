@@ -8,7 +8,9 @@ import {UnsignedPayIDAddressImpl} from "../model/impl/UnsignedPayIDAddressImpl";
 import {Address} from "../model/interfaces/Address";
 import {SignedPayIDAddress} from "../model/interfaces/SignedPayIDAddress";
 import {PaymentInformation} from "../model/interfaces/PaymentInformation";
-
+import * as jose from 'node-jose';
+import {util} from "node-jose";
+import base64url = util.base64url;
 class TestLookupService implements PayIDThumbprintLookupService {
 
     payIDThumbprintMap = new Map<string, string>();
@@ -65,21 +67,19 @@ test('Test Signing and Verification', async () => {
     const pem = key.toPEM(false);
     const key2 = await payIDUtils.fromPEM(pem);
     console.log(key2.toJSON(false));
+    console.log(base64url.encode(await key2.thumbprint('SHA-256')));
+
 });
 
 test('Test Resolving and Verification', async () => {
 
     const testLookupService = new TestLookupService();
     const payIDClient = new PayIDClient(true, testLookupService);
-    testLookupService.setPayIDThumbprint('payburn_test$payid.mayurbhandary.com', 'fb9f74297d121e2ef25e613906b0ae4763f5fe935d96441bcb492dfbb1fe1f4f')
-    const signed = {"addresses":[],"payId":"payburn_test$payid.mayurbhandary.com","verifiedAddresses":[{"signatures":[{"name":"identityKey","protected":"eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiY3J2IjoiUC0yNTYiLCJ4IjoiMEE4RjhSdG54b3NmbFdCd1h3ajZkMExGWE9OSEllQlVxeXhJMDNrR1V0MCIsInkiOiJIdmFiem9GUWk0Mk9QaVp5bmRaTjhESTNRQjFibV82dFlweFRhYWxiOEJJIiwia3R5IjoiRUMiLCJraWQiOiItNTkwS1gwU0hpN3lYbUU1QnJDdVIyUDFfcE5kbGtRYnkwa3QtN0gtSDA4In19","signature":"a6H74ESIRMcnHxOwoLN0SsyIaDsSEU8lXZL4VHULvXy8Q-NssjVQ9LxY9TV-RcDYedhOY3wBKr2FpBoycNanjw"}],"payload":"{\"payId\":\"payburn_test$payid.mayurbhandary.com\",\"payIdAddress\":{\"paymentNetwork\":\"XRPL\",\"environment\":\"TESTNET\",\"addressDetailsType\":\"CryptoAddressDetails\",\"addressDetails\":{\"address\":\"rU3mTFnefto99VcEECBAbQseRMEKTCLGxr\"}}}"}]};
-    const resolved = await payIDClient.validateResolvedPayID('payburn_test$payid.mayurbhandary.com', signed,true);
-    console.log('Validated:' + JSON.stringify(resolved));
-    const resolved2 = await payIDClient.resolvePayID('payburn_test$payid.mayurbhandary.com', true);
+    testLookupService.setPayIDThumbprint('test$payid.mayurbhandary.com', 'E5WwMgONPouv-eddlXeUJuvedGIuLZce_h8K8EXbyV8')
+    const resolved2 = await payIDClient.resolvePayID('test$payid.mayurbhandary.com', true);
     console.log('Resolved:' + JSON.stringify(resolved2, null, 2));
 
 });
-
 
 test('Test parse raw XRPL MAINNET', async () => {
     const payIDClient = new PayIDClient(true);
@@ -110,4 +110,5 @@ test('Test parse raw XRPL MAINNET', async () => {
         expect(address.environment).toBe(new XrplMainnet().environment);
     }
 });
+ 
 

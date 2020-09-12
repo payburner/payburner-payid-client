@@ -9,7 +9,8 @@ import {VerificationResult} from "../model/impl/VerificationResult";
 import {VerificationErrorCode} from "../model/interfaces/VerificationErrorCode";
 import {AddressDetailsType} from "../model/interfaces/AddressDetailsType";
 import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
-
+import {util} from "node-jose";
+import base64url = util.base64url;
 export class VerifiedPayIDUtils {
 
     newKeyStore(): jose.JWK.KeyStore {
@@ -95,7 +96,7 @@ export class VerifiedPayIDUtils {
                         let verifiedAllThumbprints = true;
                         thumbprintValues.forEach((buffer)=>{
                             const buff = buffer as Buffer;
-                            if (thumbprint !== buff.toString('hex')) {
+                            if (thumbprint !== base64url.encode( buff, 'base64' )) {
                                 console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
                                 verifiedAllThumbprints = false;
                             }

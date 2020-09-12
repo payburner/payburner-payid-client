@@ -4,6 +4,8 @@ import { ResolvedPayID } from "../model/impl/ResolvedPayID";
 import { VerificationResult } from "../model/impl/VerificationResult";
 import { VerificationErrorCode } from "../model/interfaces/VerificationErrorCode";
 import { AddressDetailsType } from "../model/interfaces/AddressDetailsType";
+import { util } from "node-jose";
+var base64url = util.base64url;
 var VerifiedPayIDUtils = /** @class */ (function () {
     function VerifiedPayIDUtils() {
     }
@@ -77,7 +79,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
                         var verifiedAllThumbprints = true;
                         thumbprintValues.forEach(function (buffer) {
                             var buff = buffer;
-                            if (thumbprint !== buff.toString('hex')) {
+                            if (thumbprint !== base64url.encode(buff, 'base64')) {
                                 console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
                                 verifiedAllThumbprints = false;
                             }

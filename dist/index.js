@@ -69227,6 +69227,7 @@ var lib = {
 };
 var lib_3 = lib.JWK;
 var lib_4 = lib.JWS;
+var lib_5 = lib.util;
 
 var UnsignedPayIDAddressImpl = /** @class */ (function () {
     function UnsignedPayIDAddressImpl(payId, address) {
@@ -69258,6 +69259,7 @@ var VerificationErrorCode;
     VerificationErrorCode[VerificationErrorCode["SYSTEM_ERROR_VERIFYING"] = 500001] = "SYSTEM_ERROR_VERIFYING";
 })(VerificationErrorCode || (VerificationErrorCode = {}));
 
+var base64url$2 = lib_5.base64url;
 var VerifiedPayIDUtils = /** @class */ (function () {
     function VerifiedPayIDUtils() {
     }
@@ -69331,7 +69333,7 @@ var VerifiedPayIDUtils = /** @class */ (function () {
                         var verifiedAllThumbprints = true;
                         thumbprintValues.forEach(function (buffer) {
                             var buff = buffer;
-                            if (thumbprint !== buff.toString('hex')) {
+                            if (thumbprint !== base64url$2.encode(buff, 'base64')) {
                                 console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
                                 verifiedAllThumbprints = false;
                             }
