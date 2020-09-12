@@ -14,6 +14,7 @@ import {PayIDThumbprintLookupService} from "./PayIDThumbprintLookupService";
 
 import {VerifiedPayIDUtils} from "./VerifiedPayIDUtils";
 import {SignedPayIDAddress} from "../model/interfaces/SignedPayIDAddress";
+import {UnsignedPayIDAddress} from "../model/interfaces/UnsignedPayIDAddress";
 
 export class PayIDClient {
 
@@ -183,6 +184,15 @@ export class PayIDClient {
                             if (!verificationResult.verified) {
                                 reject(verificationResult.errorMessage);
                             } else {
+                                if (typeof resolvedPayId.verifiedAddresses !== 'undefined' && resolvedPayId.verifiedAddresses !== null) {
+                                    resolvedPayId.addresses = new Array<Address>();
+                                    resolvedPayId.verifiedAddresses.forEach((verifiedAddress)=> {
+                                        resolvedPayId.addresses.push(
+                                            (JSON.parse(verifiedAddress.payload) as UnsignedPayIDAddress).payIdAddress
+                                        )
+                                    });
+                                }
+
                                 resolve(resolvedPayId);
                             }
                         }).catch((error) => {

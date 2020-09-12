@@ -66,7 +66,13 @@ export class VerifiedPayIDUtils {
         return true;
     }
 
-    
+    getThumbprint(key: jose.JWK.Key) : Promise<string> {
+        return new Promise<string>((resolve, reject)=>{
+            key.thumbprint('SHA-256').then((buff) => {
+                resolve(base64url.encode( buff, 'base64' ));
+            });
+        });
+    }
 
     verifyPayID(thumbprint: string|undefined, input: PaymentInformation): Promise<VerificationResult> {
         const self = this;
@@ -86,18 +92,18 @@ export class VerifiedPayIDUtils {
               Promise.all(promises).then((values) =>{
                   // now we need to verify the thumbprint
 
-                    const thumbprintPromises = new Array<Promise<Buffer>>();
+                    const thumbprintPromises = new Array<Promise<string>>();
                     values.forEach( (verificationResult: jose.JWS.VerificationResult) => {
                       console.log('Verification Result from Address:' + JSON.stringify(verificationResult));
-                      thumbprintPromises.push(verificationResult.key.thumbprint('SHA-256'));
+                      thumbprintPromises.push(this.getThumbprint( verificationResult.key) );
                     });
 
                     Promise.all(thumbprintPromises).then((thumbprintValues)=>{
                         let verifiedAllThumbprints = true;
                         thumbprintValues.forEach((buffer)=>{
-                            const buff = buffer as Buffer;
-                            if (thumbprint !== base64url.encode( buff, 'base64' )) {
-                                console.log('Failed Thumbprint Verification.  Calculated:' + buff.toString('hex') + ', Provided:' + thumbprint);
+                            const buff = buffer as string;
+                            if (thumbprint !== buff) {
+                                console.log('Failed Thumbprint Verification.  Calculated:' + buff  + ', Provided:' + thumbprint);
                                 verifiedAllThumbprints = false;
                             }
                         });

@@ -4,11 +4,6 @@ import {AddressDetailsType} from "../model/interfaces/AddressDetailsType";
 import {CryptoAddressDetails} from "../model/interfaces/CryptoAddressDetails";
 import {PayIDNetworks} from "../model/types/PayIDNetworks";
 import {VerifiedPayIDUtils} from "../services/VerifiedPayIDUtils";
-import {UnsignedPayIDAddressImpl} from "../model/impl/UnsignedPayIDAddressImpl";
-import {Address} from "../model/interfaces/Address";
-import {SignedPayIDAddress} from "../model/interfaces/SignedPayIDAddress";
-import {PaymentInformation} from "../model/interfaces/PaymentInformation";
-import * as jose from 'node-jose';
 import {util} from "node-jose";
 import base64url = util.base64url;
 class TestLookupService implements PayIDThumbprintLookupService {
@@ -67,7 +62,7 @@ test('Test Signing and Verification', async () => {
     const pem = key.toPEM(false);
     const key2 = await payIDUtils.fromPEM(pem);
     console.log(key2.toJSON(false));
-    console.log(base64url.encode(await key2.thumbprint('SHA-256')));
+    console.log(await payIDUtils.getThumbprint( key2 ));
 
 });
 
