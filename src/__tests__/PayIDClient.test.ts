@@ -110,5 +110,5 @@ test('Test parse raw XRPL MAINNET', async () => {
         expect(address.environment).toBe(new XrplMainnet().environment);
     }
 });
- 
+
 
