@@ -4,6 +4,7 @@ export * from './model/types/PayIDAddressTypes';
 export * from './model/interfaces/CryptoAddressDetails';
 export * from './model/interfaces/AchAddressDetails';
 export * from './model/impl/PayIDPublicKeyThumbprint';
+export * from './model/impl/ResolvedCryptoAddressWithThumbprint';
 export * from './services/PayIDThumbprintLookupService';
 export * from './services/PayIDClient';
 export * from './services/VerifiedPayIDUtils';

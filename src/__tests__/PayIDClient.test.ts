@@ -76,6 +76,15 @@ test('Test Resolving and Verification', async () => {
 
 });
 
+test('Test Getting thumb print', async () => {
+
+    const testLookupService = new TestLookupService();
+    const payIDClient = new PayIDClient(true, testLookupService);
+    testLookupService.setPayIDThumbprint('test$payid.mayurbhandary.com', 'E5WwMgONPouv-eddlXeUJuvedGIuLZce_h8K8EXbyV8')
+    const resolved2 = await payIDClient.resolvePayIDAddressWithThumbprint('test$payid.mayurbhandary.com', "XRPL", "TESTNET");
+    console.log('Resolved with Thumbprint:' + JSON.stringify(resolved2, null, 2));
+});
+
 test('Test parse raw XRPL MAINNET', async () => {
     const payIDClient = new PayIDClient(true);
     const rawPayId = {

@@ -15,6 +15,7 @@ import {PayIDThumbprintLookupService} from "./PayIDThumbprintLookupService";
 import {VerifiedPayIDUtils} from "./VerifiedPayIDUtils";
 import {SignedPayIDAddress} from "../model/interfaces/SignedPayIDAddress";
 import {UnsignedPayIDAddress} from "../model/interfaces/UnsignedPayIDAddress";
+import {ResolvedCryptoAddressWithThumbprintResponse} from "../model/impl/ResolvedCryptoAddressWithThumbprintResponse";
 
 export class PayIDClient {
 
@@ -143,24 +144,23 @@ export class PayIDClient {
             });
 
             if (typeof data.verifiedAddresses !== 'undefined') {
-                data.verifiedAddresses.forEach((verifiedAddress:SignedPayIDAddress)=>{
+                data.verifiedAddresses.forEach((verifiedAddress: SignedPayIDAddress) => {
                     verifiedAddresses.push(verifiedAddress);
                 });
             }
 
             resolve(new ResolvedPayID(addresses, data.payId, undefined, undefined,
-                verifiedAddresses.length > 0 ? verifiedAddresses:undefined));
+                verifiedAddresses.length > 0 ? verifiedAddresses : undefined));
         });
     }
 
-    validateResolvedPayID(payID: string, data: ResolvedPayID, verify: boolean) : Promise<ResolvedPayID>  {
+    validateResolvedPayID(payID: string, data: ResolvedPayID, verify: boolean): Promise<ResolvedPayID> {
         const self = this;
 
         return new Promise((resolve, reject) => {
             if (typeof data.payId === 'undefined') {
                 reject('The resolved PayID does not have a payID field');
-            }
-            else if (!payID.startsWith(data.payId)) {
+            } else if (!payID.startsWith(data.payId)) {
                 const errorMsg = 'Problem resolving the payId -- the record returned does not match the request';
                 console.log(errorMsg);
                 if (!self.tolerant) {
@@ -173,8 +173,7 @@ export class PayIDClient {
                     || resolvedPayId.verifiedAddresses === null || resolvedPayId.verifiedAddresses.length === 0)) {
                     console.log('No verified addresses presented so we are returning OK');
                     resolve(resolvedPayId);
-                }
-                else if (verify) {
+                } else if (verify) {
                     console.log('Verify set to true, so let us verify');
                     if (typeof self.payIDThumbprintServiceLookup !== 'undefined') {
                         self.payIDThumbprintServiceLookup.resolvePayIDThumbprint(payID).then(async (thumbprint) => {
@@ -186,7 +185,7 @@ export class PayIDClient {
                             } else {
                                 if (typeof resolvedPayId.verifiedAddresses !== 'undefined' && resolvedPayId.verifiedAddresses !== null) {
                                     resolvedPayId.addresses = new Array<Address>();
-                                    resolvedPayId.verifiedAddresses.forEach((verifiedAddress)=> {
+                                    resolvedPayId.verifiedAddresses.forEach((verifiedAddress) => {
                                         resolvedPayId.addresses.push(
                                             (JSON.parse(verifiedAddress.payload) as UnsignedPayIDAddress).payIdAddress
                                         )
@@ -219,9 +218,25 @@ export class PayIDClient {
                 self.validateResolvedPayID(payID, data, verify).then((resolvedPayID) => {
                     console.log('Validation Result:' + JSON.stringify(resolvedPayID, null, 2));
                     resolve(resolvedPayID);
-                }).catch((error)=>{
+                }).catch((error) => {
                     reject(error);
                 });
+            }).catch((error) => {
+                reject(error);
+            });
+        })
+    }
+
+    resolvePayIDAddressWithThumbprint(payID: string, paymentNetwork: string, environment: string): Promise<ResolvedCryptoAddressWithThumbprintResponse> {
+        const self = this;
+        return new Promise<ResolvedCryptoAddressWithThumbprintResponse>((resolve, reject) => {
+            self.resolveRawPayID(payID).then((data) => {
+                self.verifiedPayIDUtils.getResolvedCryptoAddressWithThumbprint(data, paymentNetwork, environment)
+                .then(
+                    (response: ResolvedCryptoAddressWithThumbprintResponse) => {
+                        resolve(response)
+                    }
+                )
             }).catch((error) => {
                 reject(error);
             });
