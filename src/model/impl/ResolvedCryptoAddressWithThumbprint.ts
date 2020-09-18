@@ -4,7 +4,7 @@ import * as jose from "node-jose";
 
 export class ResolvedCryptoAddressWithThumbprint {
 
-    constructor(network: string, environment: string, address: Address, key: jose.JWK.Key, thumbprint: string, thumbprintHex: string, thumbprintMatrix: Array<Array<string>>) {
+    constructor(network: string, environment: string, address: Address, key: jose.JWK.Key, thumbprint: string, thumbprintHex: string, thumbprintMatrix: string[][]) {
         this.network = network;
         this.environment = environment;
         this.address = address;
@@ -19,6 +19,6 @@ export class ResolvedCryptoAddressWithThumbprint {
     publicKey: jose.JWK.Key;
     thumbprint: string;
     thumbprintHex: string;
-    thumbprintMatrix: Array<Array<string>>;
+    thumbprintMatrix: string[][];
 
 }

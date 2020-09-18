@@ -91,7 +91,7 @@ export class VerifiedPayIDUtils {
                         const address = (JSON.parse(verifiedAddress.payload) as UnsignedPayIDAddress).payIdAddress;
                         if (address.environment === environment && address.paymentNetwork === network) {
                             self.verifySignedPayIDAddress(verifiedAddress)
-                            .then(function (verificationResult: jose.JWS.VerificationResult) {
+                            .then( (verificationResult: jose.JWS.VerificationResult) => {
                                 self.getThumbprint(verificationResult.key)
                                 .then((thumbprint: string) => {
                                     resolve(new ResolvedCryptoAddressWithThumbprintResponse(
@@ -120,7 +120,7 @@ export class VerifiedPayIDUtils {
         });
     }
 
-    thumbprintToHexMatrix(thumbprint: string): Array<Array<string>> {
+    thumbprintToHexMatrix(thumbprint: string): string[][] {
         const hexified = Buffer.from(thumbprint, 'utf8').toString('hex');
         const chunked = hexified.match(/.{1,4}/g);
         if (chunked === null) {
@@ -129,9 +129,10 @@ export class VerifiedPayIDUtils {
         const response = new Array();
         for (let idx = 0; idx < chunked.length; idx++) {
             if (idx % 4 === 0) {
-                response.push(new Array());
+                response.push([]);
             }
-            response[response.length - 1].push(chunked[idx].toUpperCase());
+            const chunk = chunked[idx];
+            response[response.length - 1].push(chunk.toUpperCase());
         }
         return response;
     }
